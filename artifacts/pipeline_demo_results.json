@@ -1,0 +1,957 @@
+{
+  "total_observations": 15000,
+  "anomalies_detected": 687,
+  "reasoning_sample": [
+    {
+      "station_id": "IMD_AWS_0001",
+      "timestamp": "2023-01-01 06:00:00",
+      "p_genuine_event": 0.2,
+      "p_sensor_fault": 0.8,
+      "decision": "HARDWARE_SENSOR_FAULT",
+      "evidence": {
+        "physical_bounds_valid": true,
+        "spatial_cooccurrence": false,
+        "thermodynamic_coupling_valid": true,
+        "temporal_continuity": false
+      }
+    },
+    {
+      "station_id": "IMD_AWS_0001",
+      "timestamp": "2023-01-01 07:00:00",
+      "p_genuine_event": 0.45,
+      "p_sensor_fault": 0.55,
+      "decision": "HARDWARE_SENSOR_FAULT",
+      "evidence": {
+        "physical_bounds_valid": true,
+        "spatial_cooccurrence": false,
+        "thermodynamic_coupling_valid": true,
+        "temporal_continuity": true
+      }
+    },
+    {
+      "station_id": "IMD_AWS_0001",
+      "timestamp": "2023-01-01 08:00:00",
+      "p_genuine_event": 0.45,
+      "p_sensor_fault": 0.55,
+      "decision": "HARDWARE_SENSOR_FAULT",
+      "evidence": {
+        "physical_bounds_valid": true,
+        "spatial_cooccurrence": false,
+        "thermodynamic_coupling_valid": true,
+        "temporal_continuity": true
+      }
+    },
+    {
+      "station_id": "IMD_AWS_0001",
+      "timestamp": "2023-01-01 10:00:00",
+      "p_genuine_event": 0.99,
+      "p_sensor_fault": 0.01,
+      "decision": "GENUINE_METEOROLOGICAL_EVENT",
+      "evidence": {
+        "physical_bounds_valid": true,
+        "spatial_cooccurrence": true,
+        "thermodynamic_coupling_valid": true,
+        "temporal_continuity": true
+      }
+    },
+    {
+      "station_id": "IMD_AWS_0001",
+      "timestamp": "2023-01-01 11:00:00",
+      "p_genuine_event": 0.99,
+      "p_sensor_fault": 0.01,
+      "decision": "GENUINE_METEOROLOGICAL_EVENT",
+      "evidence": {
+        "physical_bounds_valid": true,
+        "spatial_cooccurrence": true,
+        "thermodynamic_coupling_valid": true,
+        "temporal_continuity": true
+      }
+    }
+  ],
+  "sample_diagnostic_cards": [
+    {
+      "alert_header": {
+        "station_id": "IMD_AWS_0001",
+        "timestamp": "2023-01-01 06:00:00",
+        "severity": "CRITICAL",
+        "composite_score": 1.0,
+        "predicted_fault": "COORDINATED_MULTIVARIATE",
+        "fault_title": "Multi-Sensor Coordinated Failure / Power Bus Failure",
+        "confidence": 0.81,
+        "urgency": "CRITICAL"
+      },
+      "sensor_attribution": {
+        "primary_culprit": "temperature_c",
+        "all_culprits": [
+          "temperature_c",
+          "air_pressure_mbar",
+          "relative_humidity_pct"
+        ],
+        "details": {
+          "temperature_c": {
+            "deviation_sigma": 2.2073486895880885,
+            "step_change": -13.858789516704709,
+            "is_flatline": false,
+            "is_out_of_bounds": false
+          },
+          "air_pressure_mbar": {
+            "deviation_sigma": 2.199272591185483,
+            "step_change": 33.67817773556453,
+            "is_flatline": false,
+            "is_out_of_bounds": false
+          },
+          "relative_humidity_pct": {
+            "deviation_sigma": 2.0,
+            "step_change": 0.0,
+            "is_flatline": true,
+            "is_out_of_bounds": false
+          }
+        }
+      },
+      "evidence_breakdown": {
+        "summary_points": [
+          "Rate-of-change limit exceeded on 'temperature_c': \u0394=-13.86 in 1 hr (limit: 12.0).",
+          "Rate-of-change limit exceeded on 'air_pressure_mbar': \u0394=+33.68 in 1 hr (limit: 15.0).",
+          "Persistence check: 'relative_humidity_pct' identical to previous reading (\u0394=0.00).",
+          "temperature_c diverged by -14.66 from 9 neighbors (MAD Z: 14.1); air_pressure_mbar diverged by +34.28 from 9 neighbors (MAD Z: 6.4)"
+        ],
+        "spatial_disparity": {
+          "has_disparity": true,
+          "disparities": {
+            "temperature_c": {
+              "target": 7.34,
+              "neighbor_median": 22.0,
+              "delta": -14.66,
+              "z_mad": 14.12
+            },
+            "air_pressure_mbar": {
+              "target": 1045.98,
+              "neighbor_median": 1011.7,
+              "delta": 34.28,
+              "z_mad": 6.42
+            },
+            "relative_humidity_pct": {
+              "target": 100.0,
+              "neighbor_median": 98.0,
+              "delta": 2.0,
+              "z_mad": 1.35
+            }
+          },
+          "description": "temperature_c diverged by -14.66 from 9 neighbors (MAD Z: 14.1); air_pressure_mbar diverged by +34.28 from 9 neighbors (MAD Z: 6.4)"
+        },
+        "thermodynamic_state": {
+          "dew_point_c": 7.34,
+          "dew_point_spread_c": 0.0,
+          "has_violation": false,
+          "description": "Thermodynamic state is physically consistent."
+        },
+        "top_driving_features": [
+          {
+            "feature": "score_temporal",
+            "value": 0.104,
+            "importance": 0.0993,
+            "direction": "positive"
+          },
+          {
+            "feature": "composite_score",
+            "value": 1.0,
+            "importance": 0.077,
+            "direction": "positive"
+          },
+          {
+            "feature": "score_isolation_forest",
+            "value": 0.936,
+            "importance": 0.07,
+            "direction": "positive"
+          },
+          {
+            "feature": "air_pressure_mbar_roll_std6",
+            "value": 0.0,
+            "importance": 0.0601,
+            "direction": "neutral"
+          },
+          {
+            "feature": "temperature_c_val",
+            "value": 7.341,
+            "importance": 0.0585,
+            "direction": "positive"
+          }
+        ]
+      },
+      "maintenance_prescription": {
+        "action": "Station power rail instability affecting all channels simultaneously. Immediate power supply diagnostic required.",
+        "technician_task": "Replace 12V solar buffer battery and test 5V/3.3V internal voltage regulators on AWS mainboard.",
+        "target_sensor": "temperature_c",
+        "protocol": "IMD-AWS-STD-SOP-V4"
+      }
+    },
+    {
+      "alert_header": {
+        "station_id": "IMD_AWS_0001",
+        "timestamp": "2023-01-01 07:00:00",
+        "severity": "CRITICAL",
+        "composite_score": 1.0,
+        "predicted_fault": "COORDINATED_MULTIVARIATE",
+        "fault_title": "Multi-Sensor Coordinated Failure / Power Bus Failure",
+        "confidence": 0.84,
+        "urgency": "CRITICAL"
+      },
+      "sensor_attribution": {
+        "primary_culprit": "relative_humidity_pct",
+        "all_culprits": [
+          "relative_humidity_pct"
+        ],
+        "details": {
+          "temperature_c": {
+            "deviation_sigma": 2.1323486895880883,
+            "step_change": 0.6000000000000014,
+            "is_flatline": false,
+            "is_out_of_bounds": false
+          },
+          "air_pressure_mbar": {
+            "deviation_sigma": 2.225939257852148,
+            "step_change": 0.7999999999999545,
+            "is_flatline": false,
+            "is_out_of_bounds": false
+          },
+          "relative_humidity_pct": {
+            "deviation_sigma": 2.0,
+            "step_change": 0.0,
+            "is_flatline": true,
+            "is_out_of_bounds": false
+          }
+        }
+      },
+      "evidence_breakdown": {
+        "summary_points": [
+          "Persistence check: 'relative_humidity_pct' identical to previous reading (\u0394=0.00).",
+          "temperature_c diverged by -14.76 from 9 neighbors (MAD Z: 11.1); air_pressure_mbar diverged by +34.38 from 9 neighbors (MAD Z: 6.1)"
+        ],
+        "spatial_disparity": {
+          "has_disparity": true,
+          "disparities": {
+            "temperature_c": {
+              "target": 7.94,
+              "neighbor_median": 22.7,
+              "delta": -14.76,
+              "z_mad": 11.06
+            },
+            "air_pressure_mbar": {
+              "target": 1046.78,
+              "neighbor_median": 1012.4,
+              "delta": 34.38,
+              "z_mad": 6.1
+            },
+            "relative_humidity_pct": {
+              "target": 100.0,
+              "neighbor_median": 94.0,
+              "delta": 6.0,
+              "z_mad": 2.02
+            }
+          },
+          "description": "temperature_c diverged by -14.76 from 9 neighbors (MAD Z: 11.1); air_pressure_mbar diverged by +34.38 from 9 neighbors (MAD Z: 6.1)"
+        },
+        "thermodynamic_state": {
+          "dew_point_c": 7.94,
+          "dew_point_spread_c": 0.0,
+          "has_violation": false,
+          "description": "Thermodynamic state is physically consistent."
+        },
+        "top_driving_features": [
+          {
+            "feature": "score_temporal",
+            "value": 0.096,
+            "importance": 0.0993,
+            "direction": "positive"
+          },
+          {
+            "feature": "composite_score",
+            "value": 1.0,
+            "importance": 0.077,
+            "direction": "positive"
+          },
+          {
+            "feature": "score_isolation_forest",
+            "value": 0.924,
+            "importance": 0.07,
+            "direction": "positive"
+          },
+          {
+            "feature": "air_pressure_mbar_roll_std6",
+            "value": 0.0,
+            "importance": 0.0601,
+            "direction": "neutral"
+          },
+          {
+            "feature": "temperature_c_val",
+            "value": 7.941,
+            "importance": 0.0585,
+            "direction": "positive"
+          }
+        ]
+      },
+      "maintenance_prescription": {
+        "action": "Station power rail instability affecting all channels simultaneously. Immediate power supply diagnostic required.",
+        "technician_task": "Replace 12V solar buffer battery and test 5V/3.3V internal voltage regulators on AWS mainboard.",
+        "target_sensor": "relative_humidity_pct",
+        "protocol": "IMD-AWS-STD-SOP-V4"
+      }
+    },
+    {
+      "alert_header": {
+        "station_id": "IMD_AWS_0001",
+        "timestamp": "2023-01-01 08:00:00",
+        "severity": "CRITICAL",
+        "composite_score": 1.0,
+        "predicted_fault": "COORDINATED_MULTIVARIATE",
+        "fault_title": "Multi-Sensor Coordinated Failure / Power Bus Failure",
+        "confidence": 0.77,
+        "urgency": "CRITICAL"
+      },
+      "sensor_attribution": {
+        "primary_culprit": "relative_humidity_pct",
+        "all_culprits": [
+          "relative_humidity_pct"
+        ],
+        "details": {
+          "temperature_c": {
+            "deviation_sigma": 1.8573486895880884,
+            "step_change": 2.200000000000001,
+            "is_flatline": false,
+            "is_out_of_bounds": false
+          },
+          "air_pressure_mbar": {
+            "deviation_sigma": 2.259272591185481,
+            "step_change": 1.0,
+            "is_flatline": false,
+            "is_out_of_bounds": false
+          },
+          "relative_humidity_pct": {
+            "deviation_sigma": 2.0,
+            "step_change": 0.0,
+            "is_flatline": true,
+            "is_out_of_bounds": false
+          }
+        }
+      },
+      "evidence_breakdown": {
+        "summary_points": [
+          "Persistence check: 'relative_humidity_pct' identical to previous reading (\u0394=0.00).",
+          "temperature_c diverged by -14.66 from 9 neighbors (MAD Z: 19.8); air_pressure_mbar diverged by +34.28 from 9 neighbors (MAD Z: 6.4); relative_humidity_pct diverged by +14.00 from 9 neighbors (MAD Z: 4.7)"
+        ],
+        "spatial_disparity": {
+          "has_disparity": true,
+          "disparities": {
+            "temperature_c": {
+              "target": 10.14,
+              "neighbor_median": 24.8,
+              "delta": -14.66,
+              "z_mad": 19.77
+            },
+            "air_pressure_mbar": {
+              "target": 1047.78,
+              "neighbor_median": 1013.5,
+              "delta": 34.28,
+              "z_mad": 6.42
+            },
+            "relative_humidity_pct": {
+              "target": 100.0,
+              "neighbor_median": 86.0,
+              "delta": 14.0,
+              "z_mad": 4.72
+            }
+          },
+          "description": "temperature_c diverged by -14.66 from 9 neighbors (MAD Z: 19.8); air_pressure_mbar diverged by +34.28 from 9 neighbors (MAD Z: 6.4); relative_humidity_pct diverged by +14.00 from 9 neighbors (MAD Z: 4.7)"
+        },
+        "thermodynamic_state": {
+          "dew_point_c": 10.14,
+          "dew_point_spread_c": 0.0,
+          "has_violation": false,
+          "description": "Thermodynamic state is physically consistent."
+        },
+        "top_driving_features": [
+          {
+            "feature": "score_temporal",
+            "value": 1.0,
+            "importance": 0.0993,
+            "direction": "positive"
+          },
+          {
+            "feature": "composite_score",
+            "value": 1.0,
+            "importance": 0.077,
+            "direction": "positive"
+          },
+          {
+            "feature": "score_isolation_forest",
+            "value": 0.964,
+            "importance": 0.07,
+            "direction": "positive"
+          },
+          {
+            "feature": "air_pressure_mbar_roll_std6",
+            "value": 0.0,
+            "importance": 0.0601,
+            "direction": "neutral"
+          },
+          {
+            "feature": "temperature_c_val",
+            "value": 10.141,
+            "importance": 0.0585,
+            "direction": "positive"
+          }
+        ]
+      },
+      "maintenance_prescription": {
+        "action": "Station power rail instability affecting all channels simultaneously. Immediate power supply diagnostic required.",
+        "technician_task": "Replace 12V solar buffer battery and test 5V/3.3V internal voltage regulators on AWS mainboard.",
+        "target_sensor": "relative_humidity_pct",
+        "protocol": "IMD-AWS-STD-SOP-V4"
+      }
+    }
+  ],
+  "station_health_summaries": [
+    {
+      "station_id": "IMD_AWS_0001",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 77.8,
+      "status": "GOOD",
+      "lowest_sensor": "relative_humidity_pct",
+      "urgency": "ROUTINE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 91.5,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0119,
+          "drift_magnitude": 0.16,
+          "noise_index": 3.12,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -1.63,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 94.6,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0119,
+          "drift_magnitude": 0.2,
+          "noise_index": 1.64,
+          "flatline_count": 0,
+          "missing_rate": 0.0119,
+          "decay_rate_per_day": -1.63,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 70.2,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0119,
+          "drift_magnitude": 5.44,
+          "noise_index": 5.23,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -1.63,
+          "days_to_critical": null,
+          "maintenance_advice": "Excessive high-frequency noise (5.2x nominal). Check grounding rod and shielded cable braid."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] RELATIVE_HUMIDITY_PCT: Excessive high-frequency noise (5.2x nominal). Check grounding rod and shielded cable braid. (Score: 70.2/100, RUL: Imminent)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0002",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 96.3,
+      "status": "EXCELLENT",
+      "lowest_sensor": "relative_humidity_pct",
+      "urgency": "ROUTINE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 100.0,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0,
+          "drift_magnitude": 0.3,
+          "noise_index": 1.9,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.0,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 100.0,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0,
+          "drift_magnitude": 0.32,
+          "noise_index": 1.58,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.0,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 94.5,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0,
+          "drift_magnitude": 0.58,
+          "noise_index": 3.19,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.0,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        }
+      },
+      "work_orders": []
+    },
+    {
+      "station_id": "IMD_AWS_0003",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 28.6,
+      "status": "CRITICAL",
+      "lowest_sensor": "relative_humidity_pct",
+      "urgency": "EMERGENCY_DISPATCH",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 58.9,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.1369,
+          "drift_magnitude": 0.24,
+          "noise_index": 2.22,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -8.16,
+          "days_to_critical": null,
+          "maintenance_advice": "Multiple degradation signatures detected on temperature_c. Conduct comprehensive physical inspection."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 58.9,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.1369,
+          "drift_magnitude": 0.27,
+          "noise_index": 1.57,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -8.16,
+          "days_to_critical": null,
+          "maintenance_advice": "Multiple degradation signatures detected on air_pressure_mbar. Conduct comprehensive physical inspection."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 13.5,
+          "status": "CRITICAL",
+          "anomaly_rate": 0.1369,
+          "drift_magnitude": 1.28,
+          "noise_index": 5.18,
+          "flatline_count": 8,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -8.16,
+          "days_to_critical": 0.0,
+          "maintenance_advice": "Persistent signal lockup detected (8 freeze frames). Power-cycle logger and test transducer bus."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] TEMPERATURE_C: Multiple degradation signatures detected on temperature_c. Conduct comprehensive physical inspection. (Score: 58.9/100, RUL: Imminent)",
+        "[DEGRADING] AIR_PRESSURE_MBAR: Multiple degradation signatures detected on air_pressure_mbar. Conduct comprehensive physical inspection. (Score: 58.9/100, RUL: Imminent)",
+        "[CRITICAL] RELATIVE_HUMIDITY_PCT: Persistent signal lockup detected (8 freeze frames). Power-cycle logger and test transducer bus. (Score: 13.5/100, RUL: Imminent)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0005",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 55.0,
+      "status": "DEGRADING",
+      "lowest_sensor": "relative_humidity_pct",
+      "urgency": "SCHEDULED_MAINTENANCE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 72.9,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0774,
+          "drift_magnitude": 0.12,
+          "noise_index": 2.99,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.58,
+          "days_to_critical": 39.2,
+          "maintenance_advice": "Multiple degradation signatures detected on temperature_c. Conduct comprehensive physical inspection."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 70.8,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0774,
+          "drift_magnitude": 0.25,
+          "noise_index": 1.84,
+          "flatline_count": 2,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.58,
+          "days_to_critical": 35.6,
+          "maintenance_advice": "Multiple degradation signatures detected on air_pressure_mbar. Conduct comprehensive physical inspection."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 46.5,
+          "status": "CRITICAL",
+          "anomaly_rate": 0.0774,
+          "drift_magnitude": 0.29,
+          "noise_index": 5.16,
+          "flatline_count": 3,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.58,
+          "days_to_critical": 0.0,
+          "maintenance_advice": "Excessive high-frequency noise (5.2x nominal). Check grounding rod and shielded cable braid."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] TEMPERATURE_C: Multiple degradation signatures detected on temperature_c. Conduct comprehensive physical inspection. (Score: 72.9/100, RUL: 39.2 days)",
+        "[DEGRADING] AIR_PRESSURE_MBAR: Multiple degradation signatures detected on air_pressure_mbar. Conduct comprehensive physical inspection. (Score: 70.8/100, RUL: 35.6 days)",
+        "[CRITICAL] RELATIVE_HUMIDITY_PCT: Excessive high-frequency noise (5.2x nominal). Check grounding rod and shielded cable braid. (Score: 46.5/100, RUL: Imminent)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0006",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 46.3,
+      "status": "CRITICAL",
+      "lowest_sensor": "air_pressure_mbar",
+      "urgency": "EMERGENCY_DISPATCH",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 65.6,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0952,
+          "drift_magnitude": 0.04,
+          "noise_index": 3.22,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -1.63,
+          "days_to_critical": null,
+          "maintenance_advice": "Excessive high-frequency noise (3.2x nominal). Check grounding rod and shielded cable braid."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 41.4,
+          "status": "CRITICAL",
+          "anomaly_rate": 0.0952,
+          "drift_magnitude": 0.21,
+          "noise_index": 1.93,
+          "flatline_count": 11,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -1.63,
+          "days_to_critical": 0.0,
+          "maintenance_advice": "Persistent signal lockup detected (11 freeze frames). Power-cycle logger and test transducer bus."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 46.4,
+          "status": "CRITICAL",
+          "anomaly_rate": 0.0952,
+          "drift_magnitude": 1.86,
+          "noise_index": 13.03,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -1.63,
+          "days_to_critical": 0.0,
+          "maintenance_advice": "Excessive high-frequency noise (13.0x nominal). Check grounding rod and shielded cable braid."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] TEMPERATURE_C: Excessive high-frequency noise (3.2x nominal). Check grounding rod and shielded cable braid. (Score: 65.6/100, RUL: Imminent)",
+        "[CRITICAL] AIR_PRESSURE_MBAR: Persistent signal lockup detected (11 freeze frames). Power-cycle logger and test transducer bus. (Score: 41.4/100, RUL: Imminent)",
+        "[CRITICAL] RELATIVE_HUMIDITY_PCT: Excessive high-frequency noise (13.0x nominal). Check grounding rod and shielded cable braid. (Score: 46.4/100, RUL: Imminent)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0007",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 83.3,
+      "status": "GOOD",
+      "lowest_sensor": "relative_humidity_pct",
+      "urgency": "ROUTINE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 97.5,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0,
+          "drift_magnitude": 0.06,
+          "noise_index": 2.81,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.0,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 100.0,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0,
+          "drift_magnitude": 0.24,
+          "noise_index": 1.64,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.0,
+          "days_to_critical": null,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 75.6,
+          "status": "GOOD",
+          "anomaly_rate": 0.0,
+          "drift_magnitude": 3.01,
+          "noise_index": 5.55,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 0.0,
+          "days_to_critical": null,
+          "maintenance_advice": "Minor signal fluctuations detected. Observe over next 72-hour cycle."
+        }
+      },
+      "work_orders": []
+    },
+    {
+      "station_id": "IMD_AWS_0008",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 77.0,
+      "status": "GOOD",
+      "lowest_sensor": "air_pressure_mbar",
+      "urgency": "ROUTINE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 96.4,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.0119,
+          "drift_magnitude": 0.11,
+          "noise_index": 2.3,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 2.1,
+          "days_to_critical": 22.1,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 71.4,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0119,
+          "drift_magnitude": 0.23,
+          "noise_index": 25.49,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 2.1,
+          "days_to_critical": 10.2,
+          "maintenance_advice": "Excessive high-frequency noise (25.5x nominal). Check grounding rod and shielded cable braid."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 80.1,
+          "status": "GOOD",
+          "anomaly_rate": 0.0119,
+          "drift_magnitude": 2.73,
+          "noise_index": 4.54,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 2.1,
+          "days_to_critical": 14.3,
+          "maintenance_advice": "Minor signal fluctuations detected. Observe over next 72-hour cycle."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] AIR_PRESSURE_MBAR: Excessive high-frequency noise (25.5x nominal). Check grounding rod and shielded cable braid. (Score: 71.4/100, RUL: 10.2 days)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0009",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 78.7,
+      "status": "GOOD",
+      "lowest_sensor": "air_pressure_mbar",
+      "urgency": "ROUTINE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 98.2,
+          "status": "EXCELLENT",
+          "anomaly_rate": 0.006,
+          "drift_magnitude": 0.06,
+          "noise_index": 2.34,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 1.05,
+          "days_to_critical": 45.9,
+          "maintenance_advice": "Sensor functioning nominally. Continue routine monitoring."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 73.2,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.006,
+          "drift_magnitude": 0.47,
+          "noise_index": 30.74,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 1.05,
+          "days_to_critical": 22.1,
+          "maintenance_advice": "Excessive high-frequency noise (30.7x nominal). Check grounding rod and shielded cable braid."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 81.2,
+          "status": "GOOD",
+          "anomaly_rate": 0.006,
+          "drift_magnitude": 2.6,
+          "noise_index": 4.63,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": 1.05,
+          "days_to_critical": 29.7,
+          "maintenance_advice": "Minor signal fluctuations detected. Observe over next 72-hour cycle."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] AIR_PRESSURE_MBAR: Excessive high-frequency noise (30.7x nominal). Check grounding rod and shielded cable braid. (Score: 73.2/100, RUL: 22.1 days)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0010",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 34.0,
+      "status": "CRITICAL",
+      "lowest_sensor": "relative_humidity_pct",
+      "urgency": "EMERGENCY_DISPATCH",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 67.1,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0952,
+          "drift_magnitude": 0.03,
+          "noise_index": 3.04,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -5.71,
+          "days_to_critical": null,
+          "maintenance_advice": "Excessive high-frequency noise (3.0x nominal). Check grounding rod and shielded cable braid."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 71.4,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0952,
+          "drift_magnitude": 0.22,
+          "noise_index": 1.52,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -5.71,
+          "days_to_critical": null,
+          "maintenance_advice": "Multiple degradation signatures detected on air_pressure_mbar. Conduct comprehensive physical inspection."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 16.4,
+          "status": "CRITICAL",
+          "anomaly_rate": 0.0952,
+          "drift_magnitude": 4.03,
+          "noise_index": 6.06,
+          "flatline_count": 12,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -5.71,
+          "days_to_critical": 0.0,
+          "maintenance_advice": "Persistent signal lockup detected (12 freeze frames). Power-cycle logger and test transducer bus."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] TEMPERATURE_C: Excessive high-frequency noise (3.0x nominal). Check grounding rod and shielded cable braid. (Score: 67.1/100, RUL: Imminent)",
+        "[DEGRADING] AIR_PRESSURE_MBAR: Multiple degradation signatures detected on air_pressure_mbar. Conduct comprehensive physical inspection. (Score: 71.4/100, RUL: Imminent)",
+        "[CRITICAL] RELATIVE_HUMIDITY_PCT: Persistent signal lockup detected (12 freeze frames). Power-cycle logger and test transducer bus. (Score: 16.4/100, RUL: Imminent)"
+      ]
+    },
+    {
+      "station_id": "IMD_AWS_0011",
+      "timestamp": "2023-03-04 11:00:00",
+      "overall_score": 66.8,
+      "status": "DEGRADING",
+      "lowest_sensor": "temperature_c",
+      "urgency": "SCHEDULED_MAINTENANCE",
+      "sensors": {
+        "temperature_c": {
+          "variable": "temperature_c",
+          "score": 62.8,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0476,
+          "drift_magnitude": 0.08,
+          "noise_index": 3.86,
+          "flatline_count": 4,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -5.71,
+          "days_to_critical": null,
+          "maintenance_advice": "Persistent signal lockup detected (4 freeze frames). Power-cycle logger and test transducer bus."
+        },
+        "air_pressure_mbar": {
+          "variable": "air_pressure_mbar",
+          "score": 85.7,
+          "status": "GOOD",
+          "anomaly_rate": 0.0476,
+          "drift_magnitude": 0.23,
+          "noise_index": 1.45,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -5.71,
+          "days_to_critical": null,
+          "maintenance_advice": "Minor signal fluctuations detected. Observe over next 72-hour cycle."
+        },
+        "relative_humidity_pct": {
+          "variable": "relative_humidity_pct",
+          "score": 63.8,
+          "status": "DEGRADING",
+          "anomaly_rate": 0.0476,
+          "drift_magnitude": 2.17,
+          "noise_index": 5.25,
+          "flatline_count": 0,
+          "missing_rate": 0.0,
+          "decay_rate_per_day": -5.71,
+          "days_to_critical": null,
+          "maintenance_advice": "Excessive high-frequency noise (5.2x nominal). Check grounding rod and shielded cable braid."
+        }
+      },
+      "work_orders": [
+        "[DEGRADING] TEMPERATURE_C: Persistent signal lockup detected (4 freeze frames). Power-cycle logger and test transducer bus. (Score: 62.8/100, RUL: Imminent)",
+        "[DEGRADING] RELATIVE_HUMIDITY_PCT: Excessive high-frequency noise (5.2x nominal). Check grounding rod and shielded cable braid. (Score: 63.8/100, RUL: Imminent)"
+      ]
+    }
+  ],
+  "imputation_performance": {
+    "temperature_c": {
+      "raw_mae": 2.98,
+      "imputed_mae": 0.906,
+      "error_reduction_pct": 69.6
+    },
+    "air_pressure_mbar": {
+      "raw_mae": 307.372,
+      "imputed_mae": 7.915,
+      "error_reduction_pct": 97.4
+    },
+    "relative_humidity_pct": {
+      "raw_mae": 8.186,
+      "imputed_mae": 5.815,
+      "error_reduction_pct": 29.0
+    }
+  }
+}
