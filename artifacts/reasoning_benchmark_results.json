@@ -1,0 +1,100 @@
+{
+  "root_cause": {
+    "overall_accuracy": 0.9262,
+    "macro_f1": 0.8835,
+    "weighted_f1": 0.9435,
+    "anomaly_subset_accuracy": 0.9134,
+    "anomaly_subset_macro_f1": 0.8993,
+    "per_class": {
+      "COMMUNICATION_CORRUPTION": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "CONSTANT_OFFSET": {
+        "precision": 0.48186846957590657,
+        "recall": 0.969097651421508,
+        "f1-score": 0.6436781609195402,
+        "support": 809.0
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 34.0
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 26.0
+      },
+      "DROP": {
+        "precision": 0.8979591836734694,
+        "recall": 1.0,
+        "f1-score": 0.946236559139785,
+        "support": 44.0
+      },
+      "FROZEN_SENSOR": {
+        "precision": 0.836036036036036,
+        "recall": 1.0,
+        "f1-score": 0.9106967615309126,
+        "support": 928.0
+      },
+      "HIGH_NOISE": {
+        "precision": 0.6661828737300436,
+        "recall": 0.9935064935064936,
+        "f1-score": 0.7975673327541268,
+        "support": 462.0
+      },
+      "MISSING_DATA": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 147.0
+      },
+      "NORMAL": {
+        "precision": 0.9971399360691592,
+        "recall": 0.9268726918403927,
+        "f1-score": 0.9607231920199502,
+        "support": 83129.0
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "SENSOR_DRIFT": {
+        "precision": 0.23938931297709923,
+        "recall": 0.813700051894136,
+        "f1-score": 0.3699421965317919,
+        "support": 1927.0
+      },
+      "SPIKE": {
+        "precision": 0.9473684210526315,
+        "recall": 1.0,
+        "f1-score": 0.972972972972973,
+        "support": 54.0
+      },
+      "accuracy": 0.9261872146118721,
+      "macro avg": {
+        "precision": 0.8388286860928621,
+        "recall": 0.9752647407218774,
+        "f1-score": 0.8834847646557566,
+        "support": 87600.0
+      },
+      "weighted avg": {
+        "precision": 0.972187974559476,
+        "recall": 0.9261872146118721,
+        "f1-score": 0.9435199786061976,
+        "support": 87600.0
+      }
+    }
+  },
+  "event_vs_fault": {
+    "fault_attribution_accuracy_pct": 5.2,
+    "genuine_event_attribution_accuracy_pct": 100.0
+  }
+}
