@@ -71,9 +71,17 @@ class MeteorologicalImputer:
         grouped = df.groupby("station_id")
 
         for st_id, group in grouped:
-            lat = float(group["latitude"].iloc[0])
-            lon = float(group["longitude"].iloc[0])
-            elev = float(group[elev_col].iloc[0]) if elev_col else 0.0
+            first_lat = group["latitude"].iloc[0]
+            first_lon = group["longitude"].iloc[0]
+            if pd.isna(first_lat) or pd.isna(first_lon) or first_lat is None or first_lon is None:
+                continue
+
+            lat = float(first_lat)
+            lon = float(first_lon)
+            elev = 0.0
+            if elev_col and pd.notna(group[elev_col].iloc[0]) and group[elev_col].iloc[0] is not None:
+                elev = float(group[elev_col].iloc[0])
+
             self.station_metadata[str(st_id)] = {
                 "latitude": lat,
                 "longitude": lon,
