@@ -1,0 +1,456 @@
+{
+  "results": {
+    "Deterministic QC": {
+      "total_samples": 87600,
+      "true_positives": 2058,
+      "false_positives": 477,
+      "true_negatives": 82652,
+      "false_negatives": 2413,
+      "accuracy": 0.967,
+      "precision": 0.8118,
+      "recall": 0.4603,
+      "specificity": 0.9943,
+      "f1_score": 0.5875,
+      "fpr": 0.0057,
+      "false_alerts_per_station_day": 1.307,
+      "roc_auc": 0.7051,
+      "pr_auc": 0.4208,
+      "latency_us_per_sample": 2.94,
+      "total_time_seconds": 0.26
+    },
+    "Composite Baseline": {
+      "total_samples": 87600,
+      "true_positives": 2608,
+      "false_positives": 1289,
+      "true_negatives": 81840,
+      "false_negatives": 1863,
+      "accuracy": 0.964,
+      "precision": 0.6692,
+      "recall": 0.5833,
+      "specificity": 0.9845,
+      "f1_score": 0.6233,
+      "fpr": 0.0155,
+      "false_alerts_per_station_day": 3.532,
+      "roc_auc": 0.8244,
+      "pr_auc": 0.5144,
+      "latency_us_per_sample": 9.81,
+      "total_time_seconds": 0.86
+    },
+    "Isolation Forest": {
+      "total_samples": 87600,
+      "true_positives": 1318,
+      "false_positives": 4747,
+      "true_negatives": 78382,
+      "false_negatives": 3153,
+      "accuracy": 0.9098,
+      "precision": 0.2173,
+      "recall": 0.2948,
+      "specificity": 0.9429,
+      "f1_score": 0.2502,
+      "fpr": 0.0571,
+      "false_alerts_per_station_day": 13.005,
+      "roc_auc": 0.7524,
+      "pr_auc": 0.174,
+      "latency_us_per_sample": 4.31,
+      "total_time_seconds": 0.38
+    },
+    "Deep Autoencoder": {
+      "total_samples": 87600,
+      "true_positives": 3526,
+      "false_positives": 10932,
+      "true_negatives": 72197,
+      "false_negatives": 945,
+      "accuracy": 0.8644,
+      "precision": 0.2439,
+      "recall": 0.7886,
+      "specificity": 0.8685,
+      "f1_score": 0.3726,
+      "fpr": 0.1315,
+      "false_alerts_per_station_day": 29.951,
+      "roc_auc": 0.8775,
+      "pr_auc": 0.266,
+      "latency_us_per_sample": 1.95,
+      "total_time_seconds": 0.17
+    },
+    "Temporal Residual": {
+      "total_samples": 87600,
+      "true_positives": 423,
+      "false_positives": 1065,
+      "true_negatives": 82064,
+      "false_negatives": 4048,
+      "accuracy": 0.9416,
+      "precision": 0.2843,
+      "recall": 0.0946,
+      "specificity": 0.9872,
+      "f1_score": 0.142,
+      "fpr": 0.0128,
+      "false_alerts_per_station_day": 2.918,
+      "roc_auc": 0.7201,
+      "pr_auc": 0.1901,
+      "latency_us_per_sample": 0.19,
+      "total_time_seconds": 0.02
+    },
+    "Hybrid ML Ensemble": {
+      "total_samples": 87600,
+      "true_positives": 4041,
+      "false_positives": 15005,
+      "true_negatives": 68124,
+      "false_negatives": 430,
+      "accuracy": 0.8238,
+      "precision": 0.2122,
+      "recall": 0.9038,
+      "specificity": 0.8195,
+      "f1_score": 0.3437,
+      "fpr": 0.1805,
+      "false_alerts_per_station_day": 41.11,
+      "roc_auc": 0.9111,
+      "pr_auc": 0.3086,
+      "latency_us_per_sample": 0.02,
+      "total_time_seconds": 0.0
+    }
+  },
+  "breakdown": {
+    "Deterministic QC": {
+      "FROZEN_SENSOR": {
+        "total_instances": 928,
+        "detected": 928,
+        "recall": 1.0
+      },
+      "DROP": {
+        "total_instances": 44,
+        "detected": 40,
+        "recall": 0.9091
+      },
+      "SPIKE": {
+        "total_instances": 54,
+        "detected": 43,
+        "recall": 0.7963
+      },
+      "CONSTANT_OFFSET": {
+        "total_instances": 809,
+        "detected": 241,
+        "recall": 0.2979
+      },
+      "HIGH_NOISE": {
+        "total_instances": 462,
+        "detected": 220,
+        "recall": 0.4762
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      },
+      "MISSING_DATA": {
+        "total_instances": 147,
+        "detected": 147,
+        "recall": 1.0
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "total_instances": 34,
+        "detected": 20,
+        "recall": 0.5882
+      },
+      "SENSOR_DRIFT": {
+        "total_instances": 1927,
+        "detected": 363,
+        "recall": 0.1884
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "total_instances": 26,
+        "detected": 16,
+        "recall": 0.6154
+      },
+      "COMMUNICATION_CORRUPTION": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      }
+    },
+    "Composite Baseline": {
+      "FROZEN_SENSOR": {
+        "total_instances": 928,
+        "detected": 928,
+        "recall": 1.0
+      },
+      "DROP": {
+        "total_instances": 44,
+        "detected": 41,
+        "recall": 0.9318
+      },
+      "SPIKE": {
+        "total_instances": 54,
+        "detected": 44,
+        "recall": 0.8148
+      },
+      "CONSTANT_OFFSET": {
+        "total_instances": 809,
+        "detected": 469,
+        "recall": 0.5797
+      },
+      "HIGH_NOISE": {
+        "total_instances": 462,
+        "detected": 284,
+        "recall": 0.6147
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      },
+      "MISSING_DATA": {
+        "total_instances": 147,
+        "detected": 147,
+        "recall": 1.0
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "total_instances": 34,
+        "detected": 34,
+        "recall": 1.0
+      },
+      "SENSOR_DRIFT": {
+        "total_instances": 1927,
+        "detected": 597,
+        "recall": 0.3098
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "total_instances": 26,
+        "detected": 24,
+        "recall": 0.9231
+      },
+      "COMMUNICATION_CORRUPTION": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      }
+    },
+    "Isolation Forest": {
+      "FROZEN_SENSOR": {
+        "total_instances": 928,
+        "detected": 69,
+        "recall": 0.0744
+      },
+      "DROP": {
+        "total_instances": 44,
+        "detected": 30,
+        "recall": 0.6818
+      },
+      "SPIKE": {
+        "total_instances": 54,
+        "detected": 25,
+        "recall": 0.463
+      },
+      "CONSTANT_OFFSET": {
+        "total_instances": 809,
+        "detected": 445,
+        "recall": 0.5501
+      },
+      "HIGH_NOISE": {
+        "total_instances": 462,
+        "detected": 242,
+        "recall": 0.5238
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "total_instances": 20,
+        "detected": 15,
+        "recall": 0.75
+      },
+      "MISSING_DATA": {
+        "total_instances": 147,
+        "detected": 3,
+        "recall": 0.0204
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "total_instances": 34,
+        "detected": 34,
+        "recall": 1.0
+      },
+      "SENSOR_DRIFT": {
+        "total_instances": 1927,
+        "detected": 425,
+        "recall": 0.2206
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "total_instances": 26,
+        "detected": 13,
+        "recall": 0.5
+      },
+      "COMMUNICATION_CORRUPTION": {
+        "total_instances": 20,
+        "detected": 17,
+        "recall": 0.85
+      }
+    },
+    "Deep Autoencoder": {
+      "FROZEN_SENSOR": {
+        "total_instances": 928,
+        "detected": 508,
+        "recall": 0.5474
+      },
+      "DROP": {
+        "total_instances": 44,
+        "detected": 44,
+        "recall": 1.0
+      },
+      "SPIKE": {
+        "total_instances": 54,
+        "detected": 52,
+        "recall": 0.963
+      },
+      "CONSTANT_OFFSET": {
+        "total_instances": 809,
+        "detected": 789,
+        "recall": 0.9753
+      },
+      "HIGH_NOISE": {
+        "total_instances": 462,
+        "detected": 457,
+        "recall": 0.9892
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      },
+      "MISSING_DATA": {
+        "total_instances": 147,
+        "detected": 104,
+        "recall": 0.7075
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "total_instances": 34,
+        "detected": 34,
+        "recall": 1.0
+      },
+      "SENSOR_DRIFT": {
+        "total_instances": 1927,
+        "detected": 1472,
+        "recall": 0.7639
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "total_instances": 26,
+        "detected": 26,
+        "recall": 1.0
+      },
+      "COMMUNICATION_CORRUPTION": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      }
+    },
+    "Temporal Residual": {
+      "FROZEN_SENSOR": {
+        "total_instances": 928,
+        "detected": 0,
+        "recall": 0.0
+      },
+      "DROP": {
+        "total_instances": 44,
+        "detected": 4,
+        "recall": 0.0909
+      },
+      "SPIKE": {
+        "total_instances": 54,
+        "detected": 8,
+        "recall": 0.1481
+      },
+      "CONSTANT_OFFSET": {
+        "total_instances": 809,
+        "detected": 43,
+        "recall": 0.0532
+      },
+      "HIGH_NOISE": {
+        "total_instances": 462,
+        "detected": 83,
+        "recall": 0.1797
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "total_instances": 20,
+        "detected": 15,
+        "recall": 0.75
+      },
+      "MISSING_DATA": {
+        "total_instances": 147,
+        "detected": 0,
+        "recall": 0.0
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "total_instances": 34,
+        "detected": 15,
+        "recall": 0.4412
+      },
+      "SENSOR_DRIFT": {
+        "total_instances": 1927,
+        "detected": 237,
+        "recall": 0.123
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "total_instances": 26,
+        "detected": 6,
+        "recall": 0.2308
+      },
+      "COMMUNICATION_CORRUPTION": {
+        "total_instances": 20,
+        "detected": 12,
+        "recall": 0.6
+      }
+    },
+    "Hybrid ML Ensemble": {
+      "FROZEN_SENSOR": {
+        "total_instances": 928,
+        "detected": 928,
+        "recall": 1.0
+      },
+      "DROP": {
+        "total_instances": 44,
+        "detected": 44,
+        "recall": 1.0
+      },
+      "SPIKE": {
+        "total_instances": 54,
+        "detected": 52,
+        "recall": 0.963
+      },
+      "CONSTANT_OFFSET": {
+        "total_instances": 809,
+        "detected": 809,
+        "recall": 1.0
+      },
+      "HIGH_NOISE": {
+        "total_instances": 462,
+        "detected": 459,
+        "recall": 0.9935
+      },
+      "PHYSICALLY_IMPOSSIBLE": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      },
+      "MISSING_DATA": {
+        "total_instances": 147,
+        "detected": 147,
+        "recall": 1.0
+      },
+      "COORDINATED_MULTIVARIATE": {
+        "total_instances": 34,
+        "detected": 34,
+        "recall": 1.0
+      },
+      "SENSOR_DRIFT": {
+        "total_instances": 1927,
+        "detected": 1502,
+        "recall": 0.7794
+      },
+      "CROSS_SENSOR_INCONSISTENCY": {
+        "total_instances": 26,
+        "detected": 26,
+        "recall": 1.0
+      },
+      "COMMUNICATION_CORRUPTION": {
+        "total_instances": 20,
+        "detected": 20,
+        "recall": 1.0
+      }
+    }
+  }
+}
