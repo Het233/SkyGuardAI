@@ -67,3 +67,8 @@ download_checkpoint.txt
 *.pt
 *.pth
 *.onnx
+*.dat
+
+# Backups & upload zips
+artifacts/models_toy_backup/
+SkyGuardAI.zip

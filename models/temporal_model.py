@@ -38,6 +38,18 @@ class TemporalResidualPredictor:
         X: Feature matrix containing lags, rolling moments, and cyclical embeddings.
         y: Ground truth core sensor variables [T, P, RH].
         """
+        X = np.asarray(X, dtype=np.float32)
+        y = np.asarray(y, dtype=np.float32)
+
+        # Defensive check: Filter out any rows containing NaNs or Infs
+        valid_mask = ~np.isnan(y).any(axis=1) & ~np.isinf(y).any(axis=1) & ~np.isnan(X).any(axis=1) & ~np.isinf(X).any(axis=1)
+        if not np.all(valid_mask):
+            X = X[valid_mask]
+            y = y[valid_mask]
+
+        if len(y) == 0:
+            raise ValueError("TemporalResidualPredictor: No valid rows remain after dropping NaNs.")
+
         self.model.fit(X, y)
         self.is_fitted = True
 
@@ -73,12 +85,19 @@ class TemporalResidualPredictor:
             raise RuntimeError("Model must be fitted before scoring.")
 
         preds = self.predict_values(X)
-        abs_residuals = np.abs(y - preds)
+        y_arr = np.asarray(y, dtype=np.float32)
+        nan_mask = np.isnan(y_arr) | np.isinf(y_arr)
+
+        # Impute missing values with model predictions + 5.0 offset for residual calculation
+        y_safe = np.where(nan_mask, preds + 5.0, y_arr)
+        abs_residuals = np.abs(y_safe - preds)
 
         var_z_scores = np.zeros_like(abs_residuals)
         for idx, var in enumerate(CORE_VARIABLES):
             std = self.residual_stds.get(var, 1.0)
             var_z_scores[:, idx] = abs_residuals[:, idx] / std
+            # If original value was NaN/Inf, assign high anomaly z-score
+            var_z_scores[nan_mask[:, idx], idx] = 5.0
 
         # Max standardized residual across variables
         max_z = np.max(var_z_scores, axis=1)

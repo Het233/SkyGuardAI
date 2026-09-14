@@ -1,0 +1,186 @@
+{
+  "results": {
+    "Deterministic QC": {
+      "total_samples": 200000,
+      "true_positives": 106890,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 93110,
+      "accuracy": 0.5344,
+      "precision": 1.0,
+      "recall": 0.5344,
+      "specificity": 0.0,
+      "f1_score": 0.6966,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 77.2,
+      "total_time_seconds": 15.44
+    },
+    "Composite Baseline": {
+      "total_samples": 200000,
+      "true_positives": 112398,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 87602,
+      "accuracy": 0.562,
+      "precision": 1.0,
+      "recall": 0.562,
+      "specificity": 0.0,
+      "f1_score": 0.7196,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 358.53,
+      "total_time_seconds": 71.71
+    },
+    "Isolation Forest": {
+      "total_samples": 200000,
+      "true_positives": 112537,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 87463,
+      "accuracy": 0.5627,
+      "precision": 1.0,
+      "recall": 0.5627,
+      "specificity": 0.0,
+      "f1_score": 0.7202,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 6.95,
+      "total_time_seconds": 1.39
+    },
+    "Deep Autoencoder": {
+      "total_samples": 200000,
+      "true_positives": 189256,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 10744,
+      "accuracy": 0.9463,
+      "precision": 1.0,
+      "recall": 0.9463,
+      "specificity": 0.0,
+      "f1_score": 0.9724,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.6,
+      "total_time_seconds": 0.12
+    },
+    "Temporal Residual": {
+      "total_samples": 200000,
+      "true_positives": 190803,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 9197,
+      "accuracy": 0.954,
+      "precision": 1.0,
+      "recall": 0.954,
+      "specificity": 0.0,
+      "f1_score": 0.9765,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.27,
+      "total_time_seconds": 0.05
+    },
+    "Hybrid ML Ensemble": {
+      "total_samples": 200000,
+      "true_positives": 198964,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 1036,
+      "accuracy": 0.9948,
+      "precision": 1.0,
+      "recall": 0.9948,
+      "specificity": 0.0,
+      "f1_score": 0.9974,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.01,
+      "total_time_seconds": 0.0
+    }
+  },
+  "breakdown": {
+    "Deterministic QC": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 77028,
+        "recall": 0.6332
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 29862,
+        "recall": 0.3811
+      }
+    },
+    "Composite Baseline": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 77519,
+        "recall": 0.6372
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 34879,
+        "recall": 0.4452
+      }
+    },
+    "Isolation Forest": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 72278,
+        "recall": 0.5942
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 40259,
+        "recall": 0.5138
+      }
+    },
+    "Deep Autoencoder": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 115673,
+        "recall": 0.9509
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 73583,
+        "recall": 0.9391
+      }
+    },
+    "Temporal Residual": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 119978,
+        "recall": 0.9863
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 70825,
+        "recall": 0.9039
+      }
+    },
+    "Hybrid ML Ensemble": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 121594,
+        "recall": 0.9996
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 77370,
+        "recall": 0.9875
+      }
+    }
+  }
+}

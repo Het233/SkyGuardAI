@@ -15,6 +15,9 @@ import time
 import numpy as np
 import pandas as pd
 
+# Backward compatibility: np.trapezoid was added in NumPy 2.0; older versions have np.trapz
+_trapezoid = getattr(np, 'trapezoid', None) or np.trapz
+
 
 def compute_binary_metrics(
     y_true: Union[np.ndarray, pd.Series],
@@ -99,14 +102,14 @@ def compute_type_breakdown(
     anomaly_types = df[truth_type_col].unique()
 
     for anom_type in anomaly_types:
-        if anom_type == "NORMAL":
+        if str(anom_type).upper() == "NORMAL":
             continue
         mask = df[truth_type_col] == anom_type
         total_type = int(mask.sum())
         detected = int((mask & (df[y_pred_col] == 1)).sum())
         type_recall = detected / total_type if total_type > 0 else 0.0
 
-        breakdown[anom_type] = {
+        breakdown[str(anom_type).upper()] = {
             "total_instances": total_type,
             "detected": detected,
             "recall": round(type_recall, 4),
@@ -136,7 +139,7 @@ def _compute_roc_auc(y_true: np.ndarray, y_score: np.ndarray) -> Optional[float]
     tpr = np.r_[0, tpr]
     fpr = np.r_[0, fpr]
 
-    return float(np.trapezoid(tpr, fpr))
+    return float(_trapezoid(tpr, fpr))
 
 
 def _compute_pr_auc(y_true: np.ndarray, y_score: np.ndarray) -> Optional[float]:
@@ -158,4 +161,4 @@ def _compute_pr_auc(y_true: np.ndarray, y_score: np.ndarray) -> Optional[float]:
     precision = np.r_[1.0, precision]
     recall = np.r_[0.0, recall]
 
-    return float(np.trapezoid(precision, recall))
+    return float(_trapezoid(precision, recall))

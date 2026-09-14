@@ -145,7 +145,7 @@ class DeepWeatherAutoencoder:
 
         return self
 
-    def score(self, X: np.ndarray) -> np.ndarray:
+    def score(self, X: np.ndarray, batch_size: int = 16384) -> np.ndarray:
         """
         Compute continuous reconstruction error scores in [0.0, 1.0].
         """
@@ -154,15 +154,17 @@ class DeepWeatherAutoencoder:
 
         self.net.eval()
         scores = []
+        n_samples = len(X)
+        eval_bs = batch_size if getattr(self.device, "type", str(self.device)) == "cuda" else 4096
         with torch.no_grad():
-            x_all = torch.tensor(X, dtype=torch.float32).to(self.device)
-            for i in range(0, len(x_all), 1024):
-                batch = x_all[i : i + 1024]
-                recon = self.net(batch)
-                mse = torch.mean((recon - batch) ** 2, dim=1).cpu().numpy()
+            for i in range(0, n_samples, eval_bs):
+                batch_np = X[i : i + eval_bs]
+                batch_tensor = torch.from_numpy(np.ascontiguousarray(batch_np, dtype=np.float32)).to(self.device)
+                recon = self.net(batch_tensor)
+                mse = torch.mean((recon - batch_tensor) ** 2, dim=1).cpu().numpy()
                 scores.append(mse)
 
-        raw_mse = np.concatenate(scores)
+        raw_mse = np.concatenate(scores) if scores else np.zeros(0, dtype=np.float32)
         # Normalize: threshold corresponds to ~0.6; higher errors scale towards 1.0
         normalized = raw_mse / max(1e-5, self.threshold * 2.0)
         return np.clip(normalized, 0.0, 1.0)

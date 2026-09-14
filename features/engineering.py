@@ -107,11 +107,18 @@ class WeatherFeatureEngineer:
 
         # 2. Station-Isolated Temporal Lags and Rolling Moments
         temporal_dfs = []
-        stations = df["station_id"].unique() if "station_id" in df.columns else ["ALL"]
+        if "station_id" in df.columns:
+            station_groups = df.groupby("station_id", observed=True).indices
+            stations = list(station_groups.keys())
+        else:
+            station_groups = {"ALL": np.arange(len(df))}
+            stations = ["ALL"]
 
         for st in stations:
-            st_mask = (df["station_id"] == st) if "station_id" in df.columns else pd.Series(True, index=df.index)
-            st_sub = df.loc[st_mask, CORE_VARIABLES].copy()
+            idx_pos = station_groups[st]
+            if len(idx_pos) == 0:
+                continue
+            st_sub = df.iloc[idx_pos][CORE_VARIABLES].copy()
             st_feat = pd.DataFrame(index=st_sub.index)
 
             for var in CORE_VARIABLES:

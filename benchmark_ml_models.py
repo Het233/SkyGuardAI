@@ -197,10 +197,20 @@ def run_ml_benchmarks(csv_path: str, models_dir: str, out_json: str, out_md: str
     print("-" * 75)
     print(f"  {'Anomaly Class':<26} | {'Baseline':>10} | {'Autoencoder':>12} | {'Hybrid Ensemble':>16}")
     print("-" * 75)
-    for a_type in ["SENSOR_DRIFT", "CONSTANT_OFFSET", "HIGH_NOISE", "FROZEN_SENSOR", "SPIKE"]:
-        b_rec = type_breakdowns["Composite Baseline"][a_type]["recall"] * 100
-        ae_rec = type_breakdowns["Deep Autoencoder"][a_type]["recall"] * 100
-        ens_rec = type_breakdowns["Hybrid ML Ensemble"][a_type]["recall"] * 100
+    hybrid_breakdown = type_breakdowns.get("Hybrid ML Ensemble", {})
+    available_types = list(hybrid_breakdown.keys()) if hybrid_breakdown else ["SENSOR_DRIFT", "CONSTANT_OFFSET", "HIGH_NOISE", "FROZEN_SENSOR", "SPIKE"]
+    for a_type in available_types:
+        # Case-insensitive safe lookup
+        def get_rec(method_name: str, key: str) -> float:
+            bd = type_breakdowns.get(method_name, {})
+            if key in bd: return bd[key].get("recall", 0.0)
+            if key.upper() in bd: return bd[key.upper()].get("recall", 0.0)
+            if key.lower() in bd: return bd[key.lower()].get("recall", 0.0)
+            return 0.0
+
+        b_rec = get_rec("Composite Baseline", a_type) * 100
+        ae_rec = get_rec("Deep Autoencoder", a_type) * 100
+        ens_rec = get_rec("Hybrid ML Ensemble", a_type) * 100
         print(f"  {a_type:<26} | {b_rec:>9.1f}% | {ae_rec:>11.1f}% | {ens_rec:>15.1f}%")
     print("-" * 75)
 
@@ -228,8 +238,8 @@ def run_ml_benchmarks(csv_path: str, models_dir: str, out_json: str, out_md: str
 | Anomaly Class | Baseline (Phase 3) | Isolation Forest | Temporal Residual | Deep Autoencoder | Hybrid ML Ensemble |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 """ + "\n".join([
-        f"| `{t}` | {type_breakdowns['Composite Baseline'][t]['recall']*100:.1f}% | {type_breakdowns['Isolation Forest'][t]['recall']*100:.1f}% | {type_breakdowns['Temporal Residual'][t]['recall']*100:.1f}% | {type_breakdowns['Deep Autoencoder'][t]['recall']*100:.1f}% | **{type_breakdowns['Hybrid ML Ensemble'][t]['recall']*100:.1f}%** |"
-        for t in sorted(type_breakdowns["Hybrid ML Ensemble"].keys())
+        f"| `{t}` | {type_breakdowns.get('Composite Baseline', {}).get(t, {}).get('recall', 0.0)*100:.1f}% | {type_breakdowns.get('Isolation Forest', {}).get(t, {}).get('recall', 0.0)*100:.1f}% | {type_breakdowns.get('Temporal Residual', {}).get(t, {}).get('recall', 0.0)*100:.1f}% | {type_breakdowns.get('Deep Autoencoder', {}).get(t, {}).get('recall', 0.0)*100:.1f}% | **{type_breakdowns.get('Hybrid ML Ensemble', {}).get(t, {}).get('recall', 0.0)*100:.1f}%** |"
+        for t in sorted(list(hybrid_breakdown.keys()))
     ]) + """
 
 ## Key Scientific Conclusions
@@ -246,8 +256,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark SkyGuard AI ML Models")
     parser.add_argument("--input", type=str, default="data/synthetic/sample_synthetic_anomalies.csv")
     parser.add_argument("--models-dir", type=str, default="artifacts/models")
-    parser.add_argument("--out-json", type=str, default="artifacts/ml_benchmark_results.json")
-    parser.add_argument("--out-md", type=str, default="artifacts/ml_benchmark.md")
+    parser.add_argument("--out-json", "--output-json", dest="out_json", type=str, default="artifacts/ml_benchmark_results.json")
+    parser.add_argument("--out-md", "--output-md", dest="out_md", type=str, default="artifacts/ml_benchmark.md")
     args = parser.parse_args()
 
     run_ml_benchmarks(args.input, args.models_dir, args.out_json, args.out_md)

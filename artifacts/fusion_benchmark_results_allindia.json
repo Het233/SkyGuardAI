@@ -1,0 +1,246 @@
+{
+  "results": {
+    "Deterministic QC": {
+      "total_samples": 200000,
+      "true_positives": 106890,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 93110,
+      "accuracy": 0.5344,
+      "precision": 1.0,
+      "recall": 0.5344,
+      "specificity": 0.0,
+      "f1_score": 0.6966,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 78.4,
+      "total_time_seconds": 15.68
+    },
+    "Statistical Baseline": {
+      "total_samples": 200000,
+      "true_positives": 112398,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 87602,
+      "accuracy": 0.562,
+      "precision": 1.0,
+      "recall": 0.562,
+      "specificity": 0.0,
+      "f1_score": 0.7196,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 364.57,
+      "total_time_seconds": 72.91
+    },
+    "Isolation Forest": {
+      "total_samples": 200000,
+      "true_positives": 112537,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 87463,
+      "accuracy": 0.5627,
+      "precision": 1.0,
+      "recall": 0.5627,
+      "specificity": 0.0,
+      "f1_score": 0.7202,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 6.87,
+      "total_time_seconds": 1.37
+    },
+    "Deep Autoencoder (CUDA)": {
+      "total_samples": 200000,
+      "true_positives": 189256,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 10744,
+      "accuracy": 0.9463,
+      "precision": 1.0,
+      "recall": 0.9463,
+      "specificity": 0.0,
+      "f1_score": 0.9724,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.6,
+      "total_time_seconds": 0.12
+    },
+    "Temporal Residual": {
+      "total_samples": 200000,
+      "true_positives": 190803,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 9197,
+      "accuracy": 0.954,
+      "precision": 1.0,
+      "recall": 0.954,
+      "specificity": 0.0,
+      "f1_score": 0.9765,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.28,
+      "total_time_seconds": 0.06
+    },
+    "Spatial Consensus": {
+      "total_samples": 200000,
+      "true_positives": 4366,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 195634,
+      "accuracy": 0.0218,
+      "precision": 1.0,
+      "recall": 0.0218,
+      "specificity": 0.0,
+      "f1_score": 0.0427,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 623.82,
+      "total_time_seconds": 124.76
+    },
+    "SkyGuard Fusion (Single Stn)": {
+      "total_samples": 200000,
+      "true_positives": 181290,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 18710,
+      "accuracy": 0.9064,
+      "precision": 1.0,
+      "recall": 0.9064,
+      "specificity": 0.0,
+      "f1_score": 0.9509,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.17,
+      "total_time_seconds": 0.03
+    },
+    "SkyGuard Fusion (Complete)": {
+      "total_samples": 200000,
+      "true_positives": 168822,
+      "false_positives": 0,
+      "true_negatives": 0,
+      "false_negatives": 31178,
+      "accuracy": 0.8441,
+      "precision": 1.0,
+      "recall": 0.8441,
+      "specificity": 0.0,
+      "f1_score": 0.9155,
+      "fpr": 0.0,
+      "false_alerts_per_station_day": 0.0,
+      "roc_auc": null,
+      "pr_auc": 1.0,
+      "latency_us_per_sample": 0.17,
+      "total_time_seconds": 0.03
+    }
+  },
+  "breakdown": {
+    "Deterministic QC": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 77028,
+        "recall": 0.6332
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 29862,
+        "recall": 0.3811
+      }
+    },
+    "Statistical Baseline": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 77519,
+        "recall": 0.6372
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 34879,
+        "recall": 0.4452
+      }
+    },
+    "Isolation Forest": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 72278,
+        "recall": 0.5942
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 40259,
+        "recall": 0.5138
+      }
+    },
+    "Deep Autoencoder (CUDA)": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 115673,
+        "recall": 0.9509
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 73583,
+        "recall": 0.9391
+      }
+    },
+    "Temporal Residual": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 119978,
+        "recall": 0.9863
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 70825,
+        "recall": 0.9039
+      }
+    },
+    "Spatial Consensus": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 2598,
+        "recall": 0.0214
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 1768,
+        "recall": 0.0226
+      }
+    },
+    "SkyGuard Fusion (Single Stn)": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 114356,
+        "recall": 0.9401
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 66934,
+        "recall": 0.8543
+      }
+    },
+    "SkyGuard Fusion (Complete)": {
+      "SPIKE": {
+        "total_instances": 121648,
+        "detected": 108092,
+        "recall": 0.8886
+      },
+      "DROP": {
+        "total_instances": 78352,
+        "detected": 60730,
+        "recall": 0.7751
+      }
+    }
+  }
+}

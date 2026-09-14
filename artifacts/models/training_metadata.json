@@ -1,6 +1,6 @@
 {
-  "input_csv": "sample_aws_weather_data.csv",
-  "n_samples": 87600,
+  "input_source": "data/synthetic/all_india_synthetic_anomalies.parquet",
+  "n_samples": 26762400,
   "n_features": 50,
   "feature_names": [
     "temperature_c",
@@ -54,19 +54,20 @@
     "gas_law_density_proxy",
     "temp_rh_interaction"
   ],
-  "ae_device": "cuda",
-  "ae_threshold": 0.05860967934131622,
-  "if_threshold": 0.5902161004524419,
+  "ae_device": "GPU (Tesla T4)",
+  "ae_threshold": 0.09988564252853394,
+  "if_threshold": 0.44283440157123105,
   "residual_stds": {
-    "temperature_c": 0.05,
-    "air_pressure_mbar": 0.05,
-    "relative_humidity_pct": 0.05
+    "temperature_c": 1.038521647453308,
+    "air_pressure_mbar": 0.5946907997131348,
+    "relative_humidity_pct": 2.189293384552002
   },
-  "training_time_seconds": {
-    "features": 0.56,
-    "isolation_forest": 0.93,
-    "autoencoder": 14.15,
-    "temporal_predictor": 0.06,
-    "total": 15.79
+  "timing_seconds": {
+    "features_to_disk": 114.46,
+    "disk_scaling": 37.86,
+    "isolation_forest": 4.21,
+    "autoencoder": 61.71,
+    "temporal_predictor": 0.26,
+    "total": 228.27
   }
 }

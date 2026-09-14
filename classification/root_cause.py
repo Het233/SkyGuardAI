@@ -18,6 +18,7 @@ from anomaly_injection.taxonomy import AnomalyType, CORE_VARIABLES
 
 def attach_detector_scores(df: pd.DataFrame, models_dir: str) -> pd.DataFrame:
     """Helper to compute and attach component detector scores to a DataFrame."""
+    df = df.reset_index(drop=True)
     fe_path = os.path.join(models_dir, "feature_engineer.pkl")
     iso_path = os.path.join(models_dir, "isolation_forest.pkl")
     ae_path = os.path.join(models_dir, "autoencoder.pt")
@@ -47,17 +48,19 @@ def attach_detector_scores(df: pd.DataFrame, models_dir: str) -> pd.DataFrame:
 
     qc_flags, _ = qc.validate(df)
     _, stat_scores, _ = stat.detect(df)
-    iso_scores = iso_model.score(X_scaled)
-    ae_scores = ae_model.score(X_scaled)
+    iso_scores = np.nan_to_num(iso_model.score(X_scaled), nan=0.5)
+    ae_scores = np.nan_to_num(ae_model.score(X_scaled), nan=0.5)
     temp_scores, _ = tp_model.score(X_scaled, y_core)
+    temp_scores = np.nan_to_num(temp_scores, nan=1.0)
+    qc_val = np.nan_to_num(qc_flags.astype(float).values, nan=0.0)
 
     df_out = df.copy()
-    df_out["score_qc"] = qc_flags.astype(float).values
-    df_out["score_statistical"] = stat_scores.values
+    df_out["score_qc"] = qc_val
+    df_out["score_statistical"] = np.nan_to_num(stat_scores.values, nan=0.0)
     df_out["score_isolation_forest"] = iso_scores
     df_out["score_autoencoder"] = ae_scores
     df_out["score_temporal"] = temp_scores
-    df_out["composite_score"] = np.maximum.reduce([qc_flags.astype(float).values, ae_scores, temp_scores])
+    df_out["composite_score"] = np.maximum.reduce([qc_val, ae_scores, temp_scores])
     return df_out
 
 
@@ -101,6 +104,7 @@ class RootCauseClassifier:
         """
         Extract discriminative feature signatures for fault classification.
         """
+        df = df.reset_index(drop=True)
         feat_df = pd.DataFrame(index=df.index)
 
         # 1. Base Variables, Imputed Signals, and Missingness

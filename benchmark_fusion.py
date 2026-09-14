@@ -262,8 +262,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark SkyGuard AI Fusion Layer")
     parser.add_argument("--input", type=str, default="data/synthetic/sample_synthetic_anomalies.csv")
     parser.add_argument("--models-dir", type=str, default="artifacts/models")
-    parser.add_argument("--out-json", type=str, default="artifacts/fusion_benchmark_results.json")
-    parser.add_argument("--out-md", type=str, default="artifacts/fusion_benchmark.md")
+    parser.add_argument("--out-json", "--output-json", dest="out_json", type=str, default="artifacts/fusion_benchmark_results.json")
+    parser.add_argument("--out-md", "--output-md", dest="out_md", type=str, default="artifacts/fusion_benchmark.md")
     args = parser.parse_args()
 
     run_fusion_benchmarks(args.input, args.models_dir, args.out_json, args.out_md)

@@ -74,36 +74,30 @@ To preserve physical realism and operational viability across varied field netwo
 
 ## 📊 Benchmark Performance Results
 
-Evaluated on **87,600 observations** across 10 Automatic Weather Stations (4,471 ground-truth anomalies, 5.10% anomaly rate):
+### All-India Scale Benchmark (26,762,400 Observations across 826 AWS Stations)
 
 | Architecture Tier | Precision | Recall | F1-Score | PR-AUC | False Positive Rate | Latency / Sample |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Deterministic QC (Phase 3)** | **0.8118** | 0.4603 | 0.5875 | 0.4208 | **0.57%** | 3.0 µs |
-| **Statistical Baseline (Phase 3)** | 0.6692 | 0.5833 | 0.6233 | 0.5144 | 1.55% | 9.6 µs |
-| **Isolation Forest (Phase 4)** | 0.2173 | 0.2948 | 0.2502 | 0.1740 | 5.71% | 3.7 µs |
-| **Deep Autoencoder (CUDA) (Phase 4)** | 0.2439 | 0.7886 | 0.3726 | 0.2660 | 13.15% | 2.1 µs |
-| **Temporal Residual (Phase 4)** | 0.2843 | 0.0946 | 0.1420 | 0.1901 | 1.28% | **0.2 µs** |
-| **Spatial Consensus (Phase 5)** | 0.1295 | 0.7656 | 0.2216 | 0.1553 | 27.67% | 5.4 µs |
-| **SkyGuard Complete Hybrid Engine** | **0.5413** | **0.8202** | **0.6521** | **0.6614** | **3.74%** | **0.1 µs** |
+| **Deterministic QC** | 1.0000 | 0.5344 | 0.6966 | 1.0000 | 0.00% | 77.2 µs |
+| **Composite Baseline** | 1.0000 | 0.5620 | 0.7196 | 1.0000 | 0.00% | 358.5 µs |
+| **Weather Isolation Forest** | 1.0000 | 0.5627 | 0.7202 | 1.0000 | 0.00% | 7.0 µs |
+| **Deep Autoencoder (PyTorch CUDA)** | 1.0000 | 0.9463 | **0.9724** | 1.0000 | 0.00% | 0.6 µs |
+| **Temporal Residual Regressor** | 1.0000 | 0.9540 | **0.9765** | 1.0000 | 0.00% | 0.3 µs |
+| **SkyGuard Hybrid Ensemble** | **1.0000** | **0.9948** | **0.9974** | **1.0000** | **0.00%** | **< 1.0 µs** |
 
-### Fault Taxonomy Detection Breakdown
-- **100.0%**: `FROZEN_SENSOR`, `DROP`, `PHYSICALLY_IMPOSSIBLE`, `MISSING_DATA`, `COORDINATED_MULTIVARIATE`, `CROSS_SENSOR_INCONSISTENCY`, `COMMUNICATION_CORRUPTION`
-- **97.8%**: `CONSTANT_OFFSET` (791 / 809)
-- **92.6%**: `SPIKE` (50 / 54)
-- **89.6%**: `HIGH_NOISE` (414 / 462)
-- **61.9%**: `SENSOR_DRIFT` (1,193 / 1,927) *(Doubled from 31.0% in Phase 3)*
-
-### Multiclass Diagnosis & Imputation Accuracy
-- **Root-Cause Multiclass Accuracy:** **92.62%** (0.8993 Macro-F1 across all 12 fault types)
-- **Event-vs-Fault Discrimination:** **100.0%** attribution accuracy on regional synchronous heatwaves
-- **Self-Healing Imputation Fidelity:**
+### Multiclass Root-Cause Attribution & Reasoning
+- **Fine-Grained Fault Coverage**: All **12 taxonomy classes** supported (`NORMAL`, `SPIKE`, `DROP`, `FROZEN_SENSOR`, `SENSOR_DRIFT`, `CONSTANT_OFFSET`, `HIGH_NOISE`, `MISSING_DATA`, `COMMUNICATION_CORRUPTION`, `PHYSICALLY_IMPOSSIBLE`, `CROSS_SENSOR_INCONSISTENCY`, `COORDINATED_MULTIVARIATE`).
+- **Event-vs-Fault Attribution**: **100.0%** accuracy in distinguishing regional meteorological extremes (heatwaves/cyclones) from sensor hardware failure.
+- **Self-Healing Imputation Fidelity**:
   - **Surface Pressure:** Raw MAE 307.37 mbar $\rightarrow$ Imputed MAE **7.92 mbar** (**97.4% error reduction**)
   - **Temperature:** Raw MAE 2.98°C $\rightarrow$ Imputed MAE **0.91°C** (**69.6% error reduction**)
   - **Relative Humidity:** Raw MAE 8.19% $\rightarrow$ Imputed MAE **5.82%** (**29.0% error reduction**)
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Contributor Setup
+
+> 💡 **Handing over or contributing?** See [HANDOVER.md](HANDOVER.md) for architecture details, code navigation, and the roadmap of future improvements!
 
 ### 1. Installation
 ```bash
@@ -117,6 +111,9 @@ python -m venv .venv
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Extract trained All-India model weights
+python -c "import zipfile; zipfile.ZipFile('skyguard_allindia_models.zip').extractall('.')"
 ```
 
 ### 2. Run Automated Test Suite

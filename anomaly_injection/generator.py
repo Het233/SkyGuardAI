@@ -135,11 +135,16 @@ class SyntheticAnomalyGenerator:
         type_keys = list(self.weights.keys())
         prob_vals = [self.weights[k] for k in type_keys]
 
+        # Pre-group station indices using groupby to avoid scanning millions of rows per station
+        station_group_indices = df_out.groupby("station_id", observed=True).indices
+        index_array = df_out.index.values
+
         for st in stations:
-            st_indices = df_out.index[df_out["station_id"] == st].tolist()
-            n_rows = len(st_indices)
-            if n_rows < 10:
+            st_pos = station_group_indices.get(st, np.array([], dtype=int))
+            if len(st_pos) < 10:
                 continue
+            st_indices = index_array[st_pos].tolist()
+            n_rows = len(st_indices)
 
             target_anomaly_rows = int(n_rows * self.anomaly_rate)
             injected_rows = 0
