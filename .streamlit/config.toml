@@ -5,6 +5,11 @@ enableXsrfProtection = false
 address = "0.0.0.0"
 port = 8501
 
+[client]
+# SkyGuard routes its dashboard modules through components/sidebar.py.  Do not
+# let Streamlit also turn dashboard/pages into an automatic multipage menu.
+showSidebarNavigation = false
+
 [theme]
 base = "dark"
 primaryColor = "#38bdf8"
