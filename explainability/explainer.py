@@ -235,8 +235,12 @@ class AnomalyExplainer:
 
     def _check_thermodynamics(self, row: Union[pd.Series, Dict[str, Any]]) -> Dict[str, Any]:
         """Check psychrometric balance between temperature and relative humidity."""
-        t = float(row.get("temperature_c", 25.0))
-        rh = float(row.get("relative_humidity_pct", 50.0))
+        # row.get(key, default) returns None when the key EXISTS with value None
+        # (common with Pydantic optional fields).  Use `or default` as a second guard.
+        _t_raw  = row.get("temperature_c")      if hasattr(row, "get") else row.get("temperature_c")
+        _rh_raw = row.get("relative_humidity_pct") if hasattr(row, "get") else row.get("relative_humidity_pct")
+        t  = float(_t_raw  if _t_raw  is not None else 25.0)
+        rh = float(_rh_raw if _rh_raw is not None else 50.0)
 
         if pd.isna(t) or pd.isna(rh):
             return {"has_violation": True, "description": "Thermodynamic state invalid: missing T or RH."}
@@ -283,10 +287,15 @@ class AnomalyExplainer:
         desc_items = []
 
         for var in CORE_VARIABLES:
-            if var not in row or pd.isna(row[var]) or var not in neighbor_rows.columns:
+            if var not in row or var not in neighbor_rows.columns:
                 continue
-
-            target_val = float(row[var])
+            _v = row[var] if not hasattr(row, "get") else row.get(var)
+            if _v is None or (isinstance(_v, float) and pd.isna(_v)):
+                continue
+            try:
+                target_val = float(_v)
+            except (TypeError, ValueError):
+                continue
             nbr_vals = neighbor_rows[var].dropna().values
             if len(nbr_vals) == 0:
                 continue
@@ -326,8 +335,9 @@ class AnomalyExplainer:
             heuristic_features = []
             for var in CORE_VARIABLES:
                 if var in row and pd.notna(row[var]):
-                    val = float(row[var])
-                    diff1 = float(row.get(f"{var}_diff1", 0.0))
+                    val   = float(row[var])
+                    _d1   = row.get(f"{var}_diff1")
+                    diff1 = float(_d1 if _d1 is not None else 0.0)
                     if abs(diff1) > 1.0:
                         heuristic_features.append({
                             "feature": f"{var}_diff1",
@@ -336,11 +346,18 @@ class AnomalyExplainer:
                             "direction": "positive" if diff1 > 0 else "negative"
                         })
             for sc in ["score_qc", "score_autoencoder", "score_temporal", "composite_score"]:
-                if sc in row and float(row.get(sc, 0.0)) > 0.3:
+                _sc_v = row.get(sc) if hasattr(row, "get") else (row[sc] if sc in row else None)
+                if _sc_v is None:
+                    continue
+                try:
+                    sc_float = float(_sc_v)
+                except (TypeError, ValueError):
+                    continue
+                if sc_float > 0.3:
                     heuristic_features.append({
                         "feature": sc,
-                        "value": round(float(row[sc]), 3),
-                        "importance": round(float(row[sc]), 3),
+                        "value": round(sc_float, 3),
+                        "importance": round(sc_float, 3),
                         "direction": "positive"
                     })
             heuristic_features.sort(key=lambda x: x["importance"], reverse=True)

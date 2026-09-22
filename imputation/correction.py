@@ -193,7 +193,20 @@ class MeteorologicalImputer:
                 chosen_flag = ImputationFlag.TEMPORAL_FORECAST_ESTIMATE
                 final_conf = 0.50
                 for var in CORE_VARIABLES:
-                    final_vals[var] = float(df[var].iloc[max(0, idx - 1)]) if var in df.columns else 25.0
+                    _defaults = {
+                        "temperature_c": 25.0, "relative_humidity_pct": 60.0,
+                        "air_pressure_mbar": 1013.0,
+                    }
+                    _default = _defaults.get(var, 0.0)
+                    if var in df.columns:
+                        _raw = df[var].iloc[max(0, idx - 1)]
+                        try:
+                            _v = float(_raw)
+                            final_vals[var] = _v if _v == _v else _default  # NaN check
+                        except (TypeError, ValueError):
+                            final_vals[var] = _default
+                    else:
+                        final_vals[var] = _default
 
             # 4. Enforce Physical & Psychrometric Equilibrium
             final_vals = self._enforce_psychrometric_equilibrium(final_vals)

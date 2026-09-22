@@ -500,7 +500,7 @@ def render_sandbox(station_metadata):
         payload = _build_payload(
             {
                 "station_id": str(station_id),
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "sensor": sensor,
                 "sensor_name": sensor,
                 "sensor_type": sensor,

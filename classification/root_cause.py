@@ -159,8 +159,13 @@ class RootCauseClassifier:
                 feat_df[sc] = 0.0
 
         # 4. Thermodynamic psychrometric proxy
-        t = df["temperature_c"].fillna(25.0).values
-        rh = np.clip(df["relative_humidity_pct"].fillna(50.0).values, 1.0, 100.0)
+        # Cast to float64 explicitly — a 1-row DataFrame built from Python
+        # scalars may have object-dtype columns that break np.log (a ufunc).
+        t  = df["temperature_c"].fillna(25.0).to_numpy(dtype=np.float64)
+        rh = np.clip(
+            df["relative_humidity_pct"].fillna(50.0).to_numpy(dtype=np.float64),
+            1.0, 100.0,
+        )
         a, b = 17.27, 237.7
         alpha = ((a * t) / (b + t)) + np.log(rh / 100.0)
         dew_point = (b * alpha) / (a - alpha)

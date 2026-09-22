@@ -15,6 +15,7 @@ Entry-point called from app.py:
 
 from __future__ import annotations
 
+import io
 import os
 import sys
 import time
@@ -360,7 +361,7 @@ def render_simulation() -> None:
         fi = state.get("fault_inject_idx", cur_idx)
         fd = state.get("fault_df_json")
         if fd is not None:
-            faulty_df = pd.read_json(fd, orient="split")
+            faulty_df = pd.read_json(io.StringIO(fd), orient="split")
             faulty_df["timestamp"] = pd.to_datetime(faulty_df["timestamp"])
         cur_row = faulty_df.iloc[cur_idx] if faulty_df is not None else cur_row
 
