@@ -30,6 +30,8 @@ from pages.xai_alerts import render_xai_alerts
 from pages.station_health import render_station_health
 from pages.sandbox import render_sandbox
 from pages.simulation import render_simulation
+from pages.live_data import render_live_data
+from pages.big_data_analytics import render_big_data_analytics
 
 SAMPLE_CSV = os.path.join(ROOT_DIR, "data", "synthetic", "sample_synthetic_anomalies.csv")
 RESULTS_JSON = os.path.join(ROOT_DIR, "artifacts", "pipeline_demo_results.json")
@@ -122,6 +124,8 @@ def main():
         "health": lambda: render_station_health(demo_data, STATION_METADATA),
         "sandbox":      lambda: render_sandbox(STATION_METADATA),
         "simulation":   lambda: render_simulation(),
+        "live_data":    lambda: render_live_data(),
+        "big_data":     lambda: render_big_data_analytics(),
         "reports":      lambda: st.info("Reports module coming soon."),
     }
 

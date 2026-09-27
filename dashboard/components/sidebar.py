@@ -23,6 +23,8 @@ NAV_ITEMS: Tuple[Tuple[str, str, str], ...] = (
     ("health", "Health", "❤️‍🩹"),
     ("sandbox",    "Sandbox",        "⚡"),
     ("simulation", "Simulation Lab", "🔬"),
+    ("live_data",  "Live Data",      "📡"),
+    ("big_data",   "Big Data",       "📊"),
     ("reports",    "Reports",        "📋"),
 )
 
