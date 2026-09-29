@@ -1,376 +1,556 @@
 """
 ================================================================================
-dashboard/pages/telemetry.py — SkyGuard AI Live Telemetry & Imputation
+dashboard/pages/telemetry.py -- SkyGuard AI Telemetry Dashboard
 ================================================================================
-Renders the raw-vs-ground-truth-vs-imputed telemetry inspector: station /
-sensor / time-range controls, a Plotly time-series overlay, and performance
-metrics (Raw MAE, Imputed MAE, Error Reduction, Confidence) computed from
-`MeteorologicalImputer.impute_dataframe()`.
+Renders the real AWS telemetry inspector backed by the actual
+aws_weather_data_all_india_2023_present.csv dataset (2023-01-01 to 2026-09-11,
+826 stations, ~25,000 hourly observations per station).
 
-Data policy: every plotted series and every metric is derived from
-`df_sample` (the real telemetry slice passed in) run through the real
-imputer. Nothing is simulated — if a metric can't be computed from the
-available columns for the current selection (e.g. no clean-truth column, or
-no degraded points in the selected window), the UI shows an explicit
-"N/A" / empty-state rather than a placeholder number.
+Data source:   data_loader.get_telemetry_for_station()  (chunked CSV reader)
+Station list:  data_loader.get_station_ids()             (parquet, instant)
+Summary table: data_loader.get_latest_telemetry_all()    (EDA parquet, 826 rows)
 
-Requires `dashboard.styles.inject_css()` to have been called earlier in the
-page so shared tokens are available; this module injects a small amount of
-additional, page-specific CSS on top of that shared theme.
+Actual dataset schema (from the CSV):
+    station_id, station_name, state, district,
+    latitude, longitude, elevation_m, timestamp,
+    temperature_c, air_pressure_mbar, relative_humidity_pct
+
+Nothing is fabricated. If data is unavailable, a clear message is shown.
+The page explicitly labels this HISTORICAL DATA (not LIVE).
 """
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
+
+import os
+import sys
+from datetime import datetime, timedelta
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 import streamlit as st
 
-_SENSOR_OPTIONS = {
-    "temperature_c": "Temperature (°C)",
-    "air_pressure_mbar": "Surface Pressure (mbar)",
-    "relative_humidity_pct": "Relative Humidity (%)",
+# Resolve data_loader from dashboard root
+_DASHBOARD_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _DASHBOARD_DIR not in sys.path:
+    sys.path.insert(0, _DASHBOARD_DIR)
+
+from data_loader import (
+    get_station_ids,
+    get_telemetry_for_station,
+    get_latest_telemetry_all,
+)
+
+# ---------------------------------------------------------------------------
+# Column mapping: actual CSV columns → display labels & units
+# ---------------------------------------------------------------------------
+_SENSOR_COLS = {
+    "temperature_c":       ("Temperature",       "°C",   "#22e8ff"),
+    "air_pressure_mbar":   ("Pressure",          "mbar", "#7c8cff"),
+    "relative_humidity_pct": ("Humidity",        "%",    "#2bffa8"),
 }
 
-_ACCENT_RAW = "#ff5470"
-_ACCENT_IMPUTED = "#2bffa8"
-_ACCENT_TRUTH = "rgba(148, 163, 184, 0.55)"
+
+def _hex_to_rgba(hex_color: str, alpha: float = 0.06) -> str:
+    """Convert '#rrggbb' to 'rgba(r,g,b,alpha)'. Falls back to the original
+    color string if parsing fails."""
+    try:
+        h = hex_color.lstrip("#")
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return f"rgba({r},{g},{b},{alpha})"
+    except Exception:
+        return hex_color
+
+# CSV is present if the big file exists
+_CSV_PATH = os.path.join(os.path.dirname(_DASHBOARD_DIR), "aws_weather_data_all_india_2023_present.csv")
+_HAS_CSV  = os.path.exists(_CSV_PATH)
 
 
-# ==========================================================================
+# ---------------------------------------------------------------------------
 # CSS
-# ==========================================================================
-def _inject_telemetry_css() -> None:
-    st.markdown(
-        """
-        <style>
-        .sg-tele-title{
-            font-family:'Orbitron', sans-serif;
-            font-size: 1.3rem; font-weight:700;
-            color:#e7f6ff; letter-spacing:0.03em;
-        }
-        .sg-tele-caption{
-            font-family:'JetBrains Mono', monospace;
-            font-size: 0.72rem; color:#8aa2bd;
-            letter-spacing:0.04em; margin-bottom: 14px;
-        }
-        .sg-tele-panel{
-            background: linear-gradient(160deg, rgba(16,24,42,0.6), rgba(8,13,24,0.5));
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 18px;
-            backdrop-filter: blur(18px) saturate(150%);
-            -webkit-backdrop-filter: blur(18px) saturate(150%);
-            box-shadow: 0 8px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
-            padding: 14px 18px 16px 18px;
-            margin-bottom: 14px;
-        }
-        .sg-tele-metric{
-            position: relative;
-            border-radius: 14px;
-            padding: 12px 14px 10px 14px;
-            background: rgba(255,255,255,0.025);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-left: 3px solid var(--sg-m-color, #22e8ff);
-            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-            min-height: 92px;
-        }
-        .sg-tele-metric:hover{
-            transform: translateY(-3px);
-            border-color: var(--sg-m-color, #22e8ff);
-            box-shadow: 0 10px 26px rgba(0,0,0,0.4), 0 0 22px 0 var(--sg-m-shadow, rgba(34,232,255,0.25));
-        }
-        .sg-tele-metric-label{
-            font-family:'JetBrains Mono', monospace;
-            font-size: 0.66rem; font-weight:600;
-            letter-spacing:0.08em; text-transform:uppercase;
-            color:#8aa2bd;
-        }
-        .sg-tele-metric-value{
-            font-family:'Orbitron', sans-serif;
-            font-weight:800; font-size: 1.55rem;
-            color:#f4fbff; margin-top: 8px;
-            text-shadow: 0 0 18px var(--sg-m-shadow, rgba(34,232,255,0.25));
-        }
-        .sg-tele-metric-value .sg-tele-unit{
-            font-size: 0.85rem; font-weight:600; color:#8aa2bd; margin-left: 3px;
-        }
-        .sg-tele-metric-sub{
-            font-family:'Rajdhani', sans-serif;
-            font-size: 0.72rem; color:#54637a; margin-top: 3px;
-        }
-        .sg-tele-empty{
-            text-align:center; padding: 28px 10px; color:#54637a;
-            font-family:'JetBrains Mono', monospace; font-size: 0.78rem; letter-spacing:0.04em;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+# ---------------------------------------------------------------------------
+def _inject_css() -> None:
+    st.markdown("""
+<style>
+.sg-tele-title {
+    font-family:'Orbitron',sans-serif;
+    font-size:1.25rem; font-weight:800;
+    color:#e7f6ff; letter-spacing:.04em; margin-bottom:2px;
+}
+.sg-tele-sub {
+    font-family:'JetBrains Mono',monospace;
+    font-size:.68rem; color:#607898; letter-spacing:.06em;
+    text-transform:uppercase; margin-bottom:14px;
+}
+.sg-tele-badge {
+    display:inline-block; padding:3px 12px; border-radius:999px;
+    font-family:'JetBrains Mono',monospace; font-size:.62rem;
+    font-weight:700; letter-spacing:.1em;
+}
+.badge-hist {
+    background:rgba(124,140,255,.12); border:1px solid rgba(124,140,255,.4);
+    color:#7c8cff;
+}
+.badge-local {
+    background:rgba(43,255,168,.09); border:1px solid rgba(43,255,168,.35);
+    color:#2bffa8;
+}
+.badge-warn {
+    background:rgba(255,84,112,.10); border:1px solid rgba(255,84,112,.35);
+    color:#ff5470;
+}
+.sg-tele-stat {
+    background:#0B1220; border:1px solid rgba(255,255,255,.08);
+    border-radius:10px; padding:12px 16px; margin-bottom:8px;
+}
+.sg-tele-stat-label {
+    font-family:'JetBrains Mono',monospace; font-size:.57rem;
+    letter-spacing:.08em; text-transform:uppercase; color:#607898;
+}
+.sg-tele-stat-val {
+    font-family:'Orbitron',sans-serif; font-size:1.1rem;
+    font-weight:800; color:#deeeff; margin-top:2px;
+}
+.sg-tele-stat-sub {
+    font-family:'Rajdhani',sans-serif; font-size:.68rem;
+    color:#3c4e64; margin-top:1px;
+}
+.sg-tele-metric {
+    background:#0B1220; border:1px solid rgba(255,255,255,.08);
+    border-left:3px solid var(--tc,#22e8ff);
+    border-radius:10px; padding:12px 14px;
+}
+.sg-tele-metric-label {
+    font-family:'JetBrains Mono',monospace; font-size:.58rem;
+    letter-spacing:.08em; text-transform:uppercase; color:#607898;
+}
+.sg-tele-metric-value {
+    font-family:'Orbitron',sans-serif; font-weight:800; font-size:1.4rem;
+    color:#e8f4ff; line-height:1.1; margin-top:4px;
+}
+.sg-tele-metric-unit {
+    font-size:.78rem; font-weight:500; color:#607898; margin-left:3px;
+}
+.sg-tele-metric-sub {
+    font-family:'Rajdhani',sans-serif; font-size:.68rem; color:#3c4e64;
+    margin-top:2px;
+}
+.sg-tele-loading {
+    text-align:center; padding:32px 10px; color:#607898;
+    font-family:'JetBrains Mono',monospace; font-size:.8rem; letter-spacing:.04em;
+}
+.sg-tele-section {
+    font-family:'Orbitron',sans-serif; font-size:.80rem; font-weight:700;
+    color:#7df9ff; letter-spacing:.10em; text-transform:uppercase;
+    margin:18px 0 8px 0; border-bottom:1px solid rgba(34,200,255,.15);
+    padding-bottom:4px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
-def _metric_card(col, *, label: str, value: str, unit: str, sub: str, color: str) -> None:
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _stat_card(col, label: str, value: str, sub: str = "") -> None:
     with col:
         st.markdown(
-            f"""
-            <div class="sg-tele-metric" style="--sg-m-color:{color}; --sg-m-shadow:{color}55;">
-                <div class="sg-tele-metric-label">{label}</div>
-                <div class="sg-tele-metric-value">{value}<span class="sg-tele-unit">{unit}</span></div>
-                <div class="sg-tele-metric-sub">{sub}</div>
-            </div>
-            """,
+            f'<div class="sg-tele-stat">'
+            f'<div class="sg-tele-stat-label">{label}</div>'
+            f'<div class="sg-tele-stat-val">{value}</div>'
+            f'<div class="sg-tele-stat-sub">{sub}</div>'
+            f'</div>',
             unsafe_allow_html=True,
         )
 
 
-# ==========================================================================
-# Imputer invocation
-# ==========================================================================
-def _run_imputer(stn_slice: pd.DataFrame) -> Optional[pd.DataFrame]:
-    """Run the real `MeteorologicalImputer` on the given station slice.
+def _metric_card(col, label: str, value: str, unit: str, sub: str, color: str) -> None:
+    with col:
+        st.markdown(
+            f'<div class="sg-tele-metric" style="--tc:{color};">'
+            f'<div class="sg-tele-metric-label">{label}</div>'
+            f'<div class="sg-tele-metric-value">{value}'
+            f'<span class="sg-tele-metric-unit">{unit}</span></div>'
+            f'<div class="sg-tele-metric-sub">{sub}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-    Returns None (and surfaces an `st.error`) if the imputer module can't be
-    imported or raises — this page never substitutes fake imputed values.
+
+def _status_badge(status: str) -> str:
+    colors = {
+        "EXCELLENT": ("rgba(43,255,168,.12)", "rgba(43,255,168,.45)", "#2bffa8"),
+        "GOOD":      ("rgba(34,200,255,.10)", "rgba(34,200,255,.40)", "#22e8ff"),
+        "DEGRADING": ("rgba(255,184,0,.10)",  "rgba(255,184,0,.40)",  "#ffb800"),
+        "CRITICAL":  ("rgba(255,84,112,.12)", "rgba(255,84,112,.45)", "#ff5470"),
+    }
+    bg, bd, fg = colors.get(status, ("rgba(96,120,152,.08)", "rgba(96,120,152,.3)", "#607898"))
+    return (
+        f'<span style="background:{bg};border:1px solid {bd};color:{fg};'
+        f'padding:2px 9px;border-radius:999px;font-size:.65rem;'
+        f'font-family:\'JetBrains Mono\',monospace;font-weight:700;'
+        f'letter-spacing:.07em;">{status}</span>'
+    )
+
+
+_CHART_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(color="#c7d6e6", family="Rajdhani, sans-serif"),
+    margin=dict(l=10, r=10, t=44, b=10),
+    height=380,
+    xaxis=dict(gridcolor="rgba(255,255,255,0.05)", zeroline=False),
+    yaxis=dict(gridcolor="rgba(255,255,255,0.05)", zeroline=False),
+    legend=dict(
+        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+        font=dict(color="#c7d6e6"),
+    ),
+    hoverlabel=dict(
+        bgcolor="rgba(5,11,20,.95)",
+        bordercolor="rgba(34,200,255,.4)",
+        font=dict(color="#e7f6ff"),
+    ),
+)
+
+
+# ---------------------------------------------------------------------------
+# Sections
+# ---------------------------------------------------------------------------
+def _render_status_bar(station_ids: list) -> None:
+    """Top status banner: dataset info + data-source badge."""
+    data_source = "● LOCAL DATASET" if _HAS_CSV else "⚠ PARQUET SUMMARY ONLY"
+    badge_cls   = "badge-local" if _HAS_CSV else "badge-warn"
+    hist_label  = "HISTORICAL DATA · 2023-01-01 → 2026-09-11 · HOURLY"
+
+    col_badge, col_rest = st.columns([1, 4])
+    with col_badge:
+        st.markdown(
+            f'<div class="sg-tele-badge badge-hist" style="margin-top:4px;">{hist_label}</div>',
+            unsafe_allow_html=True,
+        )
+    with col_rest:
+        st.markdown(
+            f'<div class="sg-tele-badge {badge_cls}" style="margin-top:4px;">{data_source}</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="sg-tele-section">TELEMETRY OVERVIEW</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
+    _stat_card(c1, "AWS Stations",    str(len(station_ids)), "In network")
+    _stat_card(c2, "Dataset Period",  "3.75 yrs", "2023-01-01 → 2026-09-11")
+    _stat_card(c3, "Obs per Station", "~25,000",  "Hourly readings")
+    _stat_card(c4, "Sensors",         "3 active", "Temp · Pressure · Humidity")
+
+
+def _render_controls(station_ids: list) -> tuple:
+    """Station + sensor + date-range controls. Returns (station_id, sensor_col, date_start, date_end)."""
+    st.markdown('<div class="sg-tele-section">CONTROLS</div>', unsafe_allow_html=True)
+
+    c_stn, c_sens, c_start, c_end = st.columns([2, 1.5, 1.2, 1.2])
+
+    with c_stn:
+        if not station_ids:
+            st.error("No station IDs available.")
+            return None, None, None, None
+        sel_station = st.selectbox(
+            "AWS Station",
+            station_ids,
+            key="sg_tele_station_v2",
+        )
+
+    with c_sens:
+        sens_options = list(_SENSOR_COLS.keys())
+        sel_sensor = st.selectbox(
+            "Sensor",
+            sens_options,
+            format_func=lambda c: _SENSOR_COLS[c][0],
+            key="sg_tele_sensor_v2",
+        )
+
+    # Default date range: last 30 days of data available
+    dataset_end   = datetime(2026, 9, 11)
+    dataset_start = datetime(2023, 1, 1)
+    default_start = dataset_end - timedelta(days=30)
+
+    with c_start:
+        date_start = st.date_input(
+            "From",
+            value=default_start.date(),
+            min_value=dataset_start.date(),
+            max_value=dataset_end.date(),
+            key="sg_tele_start_v2",
+        )
+    with c_end:
+        date_end = st.date_input(
+            "To",
+            value=dataset_end.date(),
+            min_value=dataset_start.date(),
+            max_value=dataset_end.date(),
+            key="sg_tele_end_v2",
+        )
+
+    return sel_station, sel_sensor, pd.Timestamp(date_start), pd.Timestamp(date_end)
+
+
+def _load_station_data(station_id: str, date_start: pd.Timestamp, date_end: pd.Timestamp) -> pd.DataFrame:
+    """Load + filter station time-series. Shows a spinner while reading the CSV."""
+    if not _HAS_CSV:
+        return pd.DataFrame()
+
+    with st.spinner(f"Loading {station_id} from dataset (first load ~15–30 s, cached thereafter)…"):
+        df = get_telemetry_for_station(station_id)
+
+    if df.empty:
+        return df
+
+    mask = (df["timestamp"] >= date_start) & (df["timestamp"] <= date_end + timedelta(days=1))
+    return df[mask].reset_index(drop=True)
+
+
+def _render_sensor_kpis(df: pd.DataFrame, sensor_col: str, station_id: str) -> None:
+    """KPI cards for current/min/avg/max of the selected sensor."""
+    st.markdown('<div class="sg-tele-section">SENSOR STATISTICS</div>', unsafe_allow_html=True)
+
+    label, unit, color = _SENSOR_COLS[sensor_col]
+
+    cols = [c for c in _SENSOR_COLS if c in df.columns]
+    n_cols = len(cols)
+    kpi_cols = st.columns(n_cols * 4 if n_cols > 0 else 4)
+
+    for i, col_name in enumerate(cols):
+        lbl, unt, clr = _SENSOR_COLS[col_name]
+        series = df[col_name].dropna()
+        if series.empty:
+            _metric_card(kpi_cols[i*4],   f"{lbl} — Current", "N/A",  unt, "No data", clr)
+            _metric_card(kpi_cols[i*4+1], f"{lbl} — Min",     "N/A",  unt, "", clr)
+            _metric_card(kpi_cols[i*4+2], f"{lbl} — Avg",     "N/A",  unt, "", clr)
+            _metric_card(kpi_cols[i*4+3], f"{lbl} — Max",     "N/A",  unt, "", clr)
+        else:
+            current = float(series.iloc[-1])
+            vmin    = float(series.min())
+            vmean   = float(series.mean())
+            vmax    = float(series.max())
+            fmt     = ".1f"
+            _metric_card(kpi_cols[i*4],   f"{lbl} · Latest", f"{current:{fmt}}", unt, "Most recent",          clr)
+            _metric_card(kpi_cols[i*4+1], f"{lbl} · Min",    f"{vmin:{fmt}}",    unt, "In selected period",   clr)
+            _metric_card(kpi_cols[i*4+2], f"{lbl} · Mean",   f"{vmean:{fmt}}",   unt, "In selected period",   clr)
+            _metric_card(kpi_cols[i*4+3], f"{lbl} · Max",    f"{vmax:{fmt}}",    unt, "In selected period",   clr)
+
+
+def _render_trend_chart(df: pd.DataFrame, sensor_col: str, station_id: str) -> None:
+    """Interactive time-series chart for the selected sensor."""
+    st.markdown('<div class="sg-tele-section">SENSOR TREND</div>', unsafe_allow_html=True)
+
+    if sensor_col not in df.columns or df[sensor_col].dropna().empty:
+        st.markdown(
+            '<div class="sg-tele-loading">No data for this sensor in the selected period.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    label, unit, color = _SENSOR_COLS[sensor_col]
+
+    # Downsample for chart performance: show at most 5000 points
+    plot_df = df[["timestamp", sensor_col]].dropna()
+    if len(plot_df) > 5000:
+        step = max(1, len(plot_df) // 5000)
+        plot_df = plot_df.iloc[::step].reset_index(drop=True)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=plot_df["timestamp"],
+        y=plot_df[sensor_col],
+        mode="lines",
+        name=f"{label} ({unit})",
+        line=dict(color=color, width=1.8),
+        hovertemplate=f"<b>%{{x|%Y-%m-%d %H:%M}}</b><br>{label}: %{{y:.2f}} {unit}<extra></extra>",
+    ))
+    fig.update_layout(
+        title=dict(
+            text=f"{station_id} — {label}",
+            font=dict(color="#e7f6ff", family="Orbitron, sans-serif", size=14),
+        ),
+        yaxis_title=f"{label} ({unit})",
+        xaxis_title="Timestamp",
+        **_CHART_LAYOUT,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
+                    key="sg_tele_trend")
+
+
+def _render_multi_sensor(df: pd.DataFrame, station_id: str) -> None:
+    """Multi-sensor view: each sensor on its own subplot."""
+    st.markdown('<div class="sg-tele-section">MULTI-SENSOR VIEW</div>', unsafe_allow_html=True)
+
+    available = [c for c in _SENSOR_COLS if c in df.columns and not df[c].dropna().empty]
+    if not available:
+        st.markdown(
+            '<div class="sg-tele-loading">No sensor data available for this period.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    for col_name in available:
+        label, unit, color = _SENSOR_COLS[col_name]
+        plot_df = df[["timestamp", col_name]].dropna()
+        if len(plot_df) > 3000:
+            step = max(1, len(plot_df) // 3000)
+            plot_df = plot_df.iloc[::step].reset_index(drop=True)
+
+        fill_color = _hex_to_rgba(color, alpha=0.06) if color.startswith("#") else color
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=plot_df["timestamp"],
+            y=plot_df[col_name],
+            mode="lines",
+            name=label,
+            fill="tozeroy",
+            fillcolor=fill_color,
+            line=dict(color=color, width=1.6),
+        ))
+        fig.update_layout(
+            title=dict(text=f"{label} ({unit})", font=dict(color=color, size=13,
+                       family="Orbitron,sans-serif")),
+            yaxis_title=f"{label} ({unit})",
+            **{**_CHART_LAYOUT, "height": 260},
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False},
+                        key=f"sg_tele_multi_{col_name}")
+
+
+def _render_station_table() -> None:
+    """Live station table: latest reading for every AWS station (826 rows)."""
+    st.markdown('<div class="sg-tele-section">ALL STATIONS — LATEST READING</div>', unsafe_allow_html=True)
+
+    df = get_latest_telemetry_all()
+    if df is None or df.empty:
+        st.markdown(
+            '<div class="sg-tele-loading">Station summary unavailable.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    # Build display dataframe with available columns
+    display_cols = {}
+    if "station_id"    in df.columns: display_cols["station_id"]    = "Station ID"
+    if "station_name"  in df.columns: display_cols["station_name"]  = "Name"
+    if "state"         in df.columns: display_cols["state"]         = "State"
+    if "temperature"   in df.columns: display_cols["temperature"]   = "Temp (°C)"
+    if "pressure"      in df.columns: display_cols["pressure"]      = "Pressure (mbar)"
+    if "humidity"      in df.columns: display_cols["humidity"]      = "Humidity (%)"
+    if "health_score"  in df.columns: display_cols["health_score"]  = "Health"
+    if "status"        in df.columns: display_cols["status"]        = "Status"
+
+    show_df = df[list(display_cols.keys())].rename(columns=display_cols)
+
+    # Search filter
+    search = st.text_input(
+        "Search by Station ID or State",
+        placeholder="e.g. IMD_AWS_0001 or Maharashtra",
+        key="sg_tele_table_search",
+    )
+    if search:
+        mask = show_df.apply(
+            lambda col: col.astype(str).str.contains(search, case=False, na=False)
+        ).any(axis=1)
+        show_df = show_df[mask]
+
+    st.caption(f"Showing {len(show_df)} of 826 stations · Last reading per station")
+    st.dataframe(show_df, use_container_width=True, height=340, hide_index=True)
+
+
+# ---------------------------------------------------------------------------
+# Public entry-point (called by app.py with no arguments)
+# ---------------------------------------------------------------------------
+def render_live_telemetry() -> None:
+    """Render the SkyGuard AI Telemetry Dashboard.
+
+    Loads real data from the 2.6 GB AWS weather CSV via data_loader
+    (chunked, cached per station). The page is fully self-contained —
+    app.py does not need to pass any data.
     """
-    try:
-        from imputation.correction import MeteorologicalImputer
-    except ImportError as exc:
-        st.error(f"Could not import `MeteorologicalImputer` from `imputation.correction`: {exc}")
-        return None
+    _inject_css()
 
-    try:
-        imputer = MeteorologicalImputer(k_neighbors=2)
-        return imputer.impute_dataframe(stn_slice)
-    except Exception as exc:  # surface real imputer failures, don't mask them
-        st.error(f"MeteorologicalImputer.impute_dataframe() raised an error: {exc}")
-        return None
-
-
-# ==========================================================================
-# Public entrypoint
-# ==========================================================================
-def render_live_telemetry(df_sample: pd.DataFrame) -> None:
-    """Render the SkyGuard AI Live Telemetry & Imputation inspector page.
-
-    Args:
-        df_sample: Real telemetry dataframe, expected to contain at least
-            ``station_id``, ``timestamp``, and the raw sensor columns
-            (``temperature_c``, ``air_pressure_mbar``,
-            ``relative_humidity_pct``). Optional ``clean_<var>`` ground-truth
-            columns, if present after imputation, enable the MAE / error
-            reduction / confidence metrics. No values are fabricated: if a
-            column the metrics need isn't available, that metric is shown as
-            "N/A" rather than estimated.
-
-    Controls exposed: Station, Sensor (Meteorological Parameter), and Time
-    Range (bounded to the real min/max timestamps of the selected station's
-    data).
-
-    Plots: Raw (corrupted observation), Ground Truth (clean target, when
-    available), and Imputed (SkyGuard self-healing estimate).
-    """
-    _inject_telemetry_css()
-
-    st.markdown('<div class="sg-tele-title">📈 Live Telemetry & Imputation Inspector</div>', unsafe_allow_html=True)
+    # Title
+    st.markdown('<div class="sg-tele-title">📈 AWS Telemetry Dashboard</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sg-tele-caption">RAW SENSOR STREAM · GROUND TRUTH · SKYGUARD AI SELF-HEALING IMPUTATION</div>',
+        '<div class="sg-tele-sub">IMD · AUTOMATIC WEATHER STATION NETWORK · '
+        'HISTORICAL DATA · TEMPERATURE · PRESSURE · HUMIDITY</div>',
         unsafe_allow_html=True,
     )
 
-    if df_sample is None or len(df_sample) == 0:
-        st.markdown('<div class="sg-tele-panel"><div class="sg-tele-empty">NO TELEMETRY DATA LOADED</div></div>', unsafe_allow_html=True)
+    # Get station list (fast — parquet)
+    station_ids = get_station_ids()
+    if not station_ids:
+        st.error("No station IDs could be loaded. Check data_loader configuration.")
         return
 
-    if "station_id" not in df_sample.columns or "timestamp" not in df_sample.columns:
-        st.error("`df_sample` must contain `station_id` and `timestamp` columns.")
+    # Status bar
+    _render_status_bar(station_ids)
+
+    # Controls
+    sel_station, sel_sensor, date_start, date_end = _render_controls(station_ids)
+    if sel_station is None:
         return
 
-    stations = sorted(df_sample["station_id"].dropna().unique().tolist())
-    if not stations:
-        st.markdown('<div class="sg-tele-panel"><div class="sg-tele-empty">NO STATIONS FOUND IN TELEMETRY DATA</div></div>', unsafe_allow_html=True)
+    # Validate date range
+    if date_start > date_end:
+        st.warning("'From' date must be before 'To' date.")
         return
 
-    available_sensors = [c for c in _SENSOR_OPTIONS if c in df_sample.columns]
-    if not available_sensors:
-        st.error("None of the expected sensor columns were found in `df_sample`.")
-        return
+    # Refresh button
+    col_ref, _ = st.columns([1, 5])
+    with col_ref:
+        if st.button("🔄 Refresh Data", key="sg_tele_refresh"):
+            # Clear the per-station cache for this station
+            get_telemetry_for_station.clear()
+            st.rerun()
 
-    # ---- Controls: Station · Sensor · Time Range ---------------------------
-    st.markdown('<div class="sg-tele-panel">', unsafe_allow_html=True)
-    c_station, c_sensor, c_range = st.columns([1, 1.3, 2])
-
-    with c_station:
-        sel_station = st.selectbox("Station", stations, key="sg_tele_station")
-
-    with c_sensor:
-        sel_var = st.selectbox(
-            "Sensor",
-            available_sensors,
-            format_func=lambda v: _SENSOR_OPTIONS.get(v, v),
-            key="sg_tele_sensor",
+    # Load station time-series
+    if not _HAS_CSV:
+        st.warning(
+            "The full telemetry CSV (`aws_weather_data_all_india_2023_present.csv`) "
+            "was not found. The station table uses summary data only. "
+            "Time-series charts are unavailable."
         )
-
-    station_df = df_sample[df_sample["station_id"] == sel_station].copy()
-    station_df["timestamp"] = pd.to_datetime(station_df["timestamp"])
-    station_df = station_df.sort_values("timestamp")
-
-    with c_range:
-        if len(station_df) > 0:
-            ts_min = station_df["timestamp"].min().to_pydatetime()
-            ts_max = station_df["timestamp"].max().to_pydatetime()
-            if ts_min == ts_max:
-                st.caption(f"Time Range: single observation at {ts_min}")
-                range_start, range_end = ts_min, ts_max
-            else:
-                range_start, range_end = st.slider(
-                    "Time Range",
-                    min_value=ts_min,
-                    max_value=ts_max,
-                    value=(ts_min, ts_max),
-                    key="sg_tele_range",
-                )
-        else:
-            range_start, range_end = None, None
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    if range_start is None:
-        st.markdown(f'<div class="sg-tele-panel"><div class="sg-tele-empty">NO OBSERVATIONS FOR STATION {sel_station}</div></div>', unsafe_allow_html=True)
+        _render_station_table()
         return
 
-    stn_slice = station_df[(station_df["timestamp"] >= range_start) & (station_df["timestamp"] <= range_end)].copy()
+    df = _load_station_data(sel_station, date_start, date_end)
 
-    if len(stn_slice) == 0:
-        st.markdown('<div class="sg-tele-panel"><div class="sg-tele-empty">NO OBSERVATIONS IN THE SELECTED TIME RANGE</div></div>', unsafe_allow_html=True)
-        return
-
-    # ---- Run the real imputer ------------------------------------------
-    stn_imputed = _run_imputer(stn_slice)
-    if stn_imputed is None:
-        return
-
-    imputed_col = f"imputed_{sel_var}"
-    clean_col = f"clean_{sel_var}"
-
-    if imputed_col not in stn_imputed.columns:
-        st.error(f"`MeteorologicalImputer.impute_dataframe()` did not return the expected `{imputed_col}` column.")
-        return
-
-    time_x = stn_imputed["timestamp"]
-    raw_y = stn_imputed[sel_var]
-    imp_y = stn_imputed[imputed_col]
-    clean_y = stn_imputed[clean_col] if clean_col in stn_imputed.columns else None
-
-    # ---- Plot: Raw vs Ground Truth vs Imputed ---------------------------
-    st.markdown('<div class="sg-tele-panel">', unsafe_allow_html=True)
-    fig = go.Figure()
-
-    if clean_y is not None:
-        fig.add_trace(
-            go.Scatter(
-                x=time_x, y=clean_y, mode="lines", name="Ground Truth",
-                line=dict(color=_ACCENT_TRUTH, width=2, dash="dot"),
-            )
-        )
-
-    fig.add_trace(
-        go.Scatter(
-            x=time_x, y=raw_y, mode="lines+markers", name="Raw",
-            line=dict(color=_ACCENT_RAW, width=1.6),
-            marker=dict(size=4, color=_ACCENT_RAW),
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=time_x, y=imp_y, mode="lines", name="Imputed",
-            line=dict(color=_ACCENT_IMPUTED, width=2.6),
-        )
-    )
-
-    fig.update_layout(
-        title=dict(text=f"{sel_station} — {_SENSOR_OPTIONS.get(sel_var, sel_var)}", font=dict(color="#e7f6ff", family="Orbitron, sans-serif", size=15)),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#c7d6e6", family="Rajdhani, sans-serif"),
-        xaxis=dict(title="Timestamp", gridcolor="rgba(255,255,255,0.06)", zeroline=False),
-        yaxis=dict(title=_SENSOR_OPTIONS.get(sel_var, sel_var), gridcolor="rgba(255,255,255,0.06)", zeroline=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#c7d6e6")),
-        margin=dict(l=10, r=10, t=52, b=10),
-        height=440,
-        hoverlabel=dict(bgcolor="rgba(6,10,20,0.95)", bordercolor="rgba(34,232,255,0.45)", font=dict(color="#e7f6ff")),
-    )
-    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False}, key="sg_telemetry_fig")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ---- Metrics: Raw MAE · Imputed MAE · Error Reduction · Confidence ----
-    st.markdown('<div class="sg-tele-panel">', unsafe_allow_html=True)
-
-    if clean_y is None:
+    if df.empty:
         st.markdown(
-            '<div class="sg-tele-empty">NO GROUND-TRUTH COLUMN '
-            f'(`{clean_col}`) RETURNED — MAE / ERROR REDUCTION CANNOT BE COMPUTED</div>',
+            f'<div class="sg-tele-loading">'
+            f'No observations found for <b>{sel_station}</b> '
+            f'between {date_start.date()} and {date_end.date()}.'
+            f'</div>',
             unsafe_allow_html=True,
         )
-        st.markdown("</div>", unsafe_allow_html=True)
+        _render_station_table()
         return
 
-    flag_col = "imputation_flag"
-    if flag_col in stn_imputed.columns:
-        anom_mask = stn_imputed[flag_col] != "RAW_PASSTHROUGH"
-    else:
-        # No flag column returned — fall back to comparing every point
-        # rather than guessing which points were corrected.
-        anom_mask = pd.Series(True, index=stn_imputed.index)
+    row_count = len(df)
+    ts_min    = df["timestamp"].min()
+    ts_max    = df["timestamp"].max()
 
-    if anom_mask.sum() == 0:
-        st.markdown(
-            '<div class="sg-tele-empty">NO DEGRADED / IMPUTED OBSERVATIONS IN THIS WINDOW — FLEET NOMINAL</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-        return
+    # Dataset info row
+    c1, c2, c3 = st.columns(3)
+    _stat_card(c1, "Records Loaded",   f"{row_count:,}", f"{sel_station}")
+    _stat_card(c2, "Period Start",     ts_min.strftime("%Y-%m-%d %H:%M"), "Earliest observation")
+    _stat_card(c3, "Period End",       ts_max.strftime("%Y-%m-%d %H:%M"), "Latest observation")
 
-    raw_errs = np.abs(raw_y[anom_mask] - clean_y[anom_mask])
-    imp_errs = np.abs(imp_y[anom_mask] - clean_y[anom_mask])
-    raw_mae = float(np.nanmean(raw_errs)) if raw_errs.notna().any() else None
-    imp_mae = float(np.nanmean(imp_errs)) if imp_errs.notna().any() else None
+    # Sensor KPIs
+    _render_sensor_kpis(df, sel_sensor, sel_station)
 
-    err_red = None
-    if raw_mae is not None and imp_mae is not None and raw_mae > 0:
-        err_red = max(0.0, (raw_mae - imp_mae) / raw_mae * 100.0)
+    # Trend chart
+    _render_trend_chart(df, sel_sensor, sel_station)
 
-    confidence_val = None
-    for cand_col in ("imputation_confidence", "confidence"):
-        if cand_col in stn_imputed.columns:
-            conf_series = stn_imputed.loc[anom_mask, cand_col].dropna()
-            if len(conf_series) > 0:
-                confidence_val = float(conf_series.mean())
-            break
+    # Multi-sensor
+    with st.expander("📊 Multi-Sensor View", expanded=False):
+        _render_multi_sensor(df, sel_station)
 
-    m1, m2, m3, m4 = st.columns(4)
-    _metric_card(
-        m1, label="Raw MAE",
-        value=f"{raw_mae:.2f}" if raw_mae is not None else "N/A",
-        unit="", sub=f"{int(anom_mask.sum())} degraded points",
-        color=_ACCENT_RAW,
-    )
-    _metric_card(
-        m2, label="Imputed MAE",
-        value=f"{imp_mae:.2f}" if imp_mae is not None else "N/A",
-        unit="", sub="vs. ground truth",
-        color=_ACCENT_IMPUTED,
-    )
-    _metric_card(
-        m3, label="Error Reduction",
-        value=f"{err_red:.1f}" if err_red is not None else "N/A",
-        unit="%" if err_red is not None else "",
-        sub="Raw → Imputed MAE",
-        color="#7c8cff",
-    )
-    _metric_card(
-        m4, label="Confidence",
-        value=f"{confidence_val * 100:.1f}" if confidence_val is not None and confidence_val <= 1 else (f"{confidence_val:.1f}" if confidence_val is not None else "N/A"),
-        unit="%" if confidence_val is not None else "",
-        sub="Mean imputer confidence" if confidence_val is not None else "Not returned by imputer",
-        color="#b084fc",
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+    # All-stations table
+    with st.expander("📋 All Stations — Latest Reading (826 stations)", expanded=False):
+        _render_station_table()

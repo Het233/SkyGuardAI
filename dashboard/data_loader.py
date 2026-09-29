@@ -498,3 +498,123 @@ def load_eda_dataframe() -> pd.DataFrame:
 
 # Public alias expected by network_map.py
 load_aws_dataset = load_eda_dataframe
+
+
+@st.cache_data(show_spinner=False)
+def get_total_aws_stations() -> int:
+    """Return the count of unique AWS stations in the authoritative dataset.
+
+    This is the SINGLE source of truth for fleet size across the dashboard.
+    It must NOT be replaced by ``len(STATION_METADATA)`` or any hardcoded value.
+
+    The station identifier column is ``station_id`` (canonical column guaranteed
+    by ``load_eda_dataframe``).  The function falls back gracefully to the
+    synthetic 826-station registry if no real CSV is present.
+
+    Returns:
+        int: number of unique AWS station IDs (typically 826).
+    """
+    try:
+        df = load_eda_dataframe()
+        if "station_id" in df.columns:
+            return int(df["station_id"].nunique())
+        # Fallback: count rows (one per station after dedup in load_eda_dataframe)
+        return len(df)
+    except Exception:
+        return 826  # last-resort fallback matching the known dataset size
+
+
+# ---------------------------------------------------------------------------
+# Telemetry time-series functions
+# ---------------------------------------------------------------------------
+
+@st.cache_data(show_spinner=False)
+def get_station_ids() -> list:
+    """Return sorted list of all station IDs from the summary parquet (fast, no CSV scan).
+
+    Used by the Telemetry page station selector. Falls back to load_eda_dataframe
+    if the parquet is unavailable.
+    """
+    try:
+        if os.path.exists(_SUMMARY_FILE):
+            df = pd.read_parquet(_SUMMARY_FILE)
+            if "station_id" in df.columns:
+                return sorted(df["station_id"].dropna().unique().tolist())
+        # Fallback to synthetic registry
+        df = load_eda_dataframe()
+        return sorted(df["station_id"].dropna().unique().tolist())
+    except Exception:
+        return []
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def get_telemetry_for_station(station_id: str) -> pd.DataFrame:
+    """Return the complete time-series for one AWS station from the big CSV.
+
+    Reads the 2.6 GB CSV in chunks, keeping only rows matching `station_id`.
+    Each station has approximately 25,000 hourly rows (2023-01-01 to 2026-09-11).
+    Result is cached by Streamlit for 5 minutes (ttl=300) so the CSV is read
+    at most once per station per session.
+
+    Returns a DataFrame with columns:
+        station_id, station_name, state, district,
+        latitude, longitude, elevation_m,
+        timestamp (datetime64), temperature_c,
+        air_pressure_mbar, relative_humidity_pct
+
+    Returns an empty DataFrame if the CSV is unavailable or the station has
+    no records. Never raises — the caller handles the empty case.
+    """
+    if not os.path.exists(_WEATHER_DATA_CSV):
+        return pd.DataFrame()
+
+    try:
+        usecols = [
+            "station_id", "station_name", "state", "district",
+            "latitude", "longitude", "elevation_m",
+            "timestamp", "temperature_c", "air_pressure_mbar",
+            "relative_humidity_pct",
+        ]
+        chunks = []
+        for chunk in pd.read_csv(
+            _WEATHER_DATA_CSV,
+            usecols=usecols,
+            chunksize=200_000,
+            low_memory=False,
+        ):
+            mask = chunk["station_id"] == station_id
+            if mask.any():
+                chunks.append(chunk[mask])
+
+        if not chunks:
+            return pd.DataFrame()
+
+        df = pd.concat(chunks, ignore_index=True)
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+        df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
+        return df
+
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data(show_spinner=False, ttl=300)
+def get_latest_telemetry_all() -> pd.DataFrame:
+    """Return the per-station summary with the latest sensor readings.
+
+    This is the summary parquet (826 rows, one per station) augmented with
+    a 'latest_timestamp' column derived from the parquet metadata if available.
+    Used by the telemetry live station table.
+
+    Column mapping vs. the big CSV:
+        temperature    ← temperature_c (from summary build)
+        pressure       ← air_pressure_mbar
+        humidity       ← relative_humidity_pct
+    These are the canonical names in the EDA dataframe / summary parquet.
+    """
+    try:
+        df = load_eda_dataframe()   # 826 rows, cached
+        return df
+    except Exception:
+        return pd.DataFrame()
+

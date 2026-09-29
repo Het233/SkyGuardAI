@@ -3,9 +3,14 @@
 dashboard/app.py — SkyGuard AI Command Center (entrypoint)
 ================================================================================
 Wires the existing page modules together: injects the shared theme, loads the
-cached datasets, renders the sidebar and KPI strip, then routes each page
-module into its own tab. All page logic, CSS and data generation live in the
-modules this file imports — nothing is duplicated here.
+cached datasets, renders the sidebar and the global top bar, then routes each
+page module. All page logic, CSS and data generation live in the modules this
+file imports — nothing is duplicated here.
+
+Top-bar rendering is handled EXCLUSIVELY by:
+    components/topbar.py  →  render_topbar(demo_data, STATION_METADATA, show_kpis=...)
+
+Do NOT call render_header() or render_kpi_cards() anywhere else.
 """
 
 import json
@@ -21,8 +26,7 @@ if ROOT_DIR not in sys.path:
 
 from styles import inject_css
 from components.sidebar import render_sidebar
-from components.header import render_header
-from components.kpi_cards import render_kpi_cards
+from components.topbar import render_topbar
 
 from pages.network_map import render_network_map
 from pages.telemetry import render_live_telemetry
@@ -49,6 +53,10 @@ STATION_METADATA = {
     "AWS_SHL_009": {"city": "Shimla", "lat": 31.1048, "lon": 77.1734, "elev": 2276},
     "AWS_GUW_010": {"city": "Guwahati", "lat": 26.1445, "lon": 91.7362, "elev": 55},
 }
+
+# Pages where the KPI strip should be hidden so data-heavy content starts
+# immediately after the header.
+_NO_KPI_PAGES = {"sandbox", "simulation", "live_data", "big_data"}
 
 
 @st.cache_data
@@ -90,8 +98,16 @@ def main():
     try:
         inject_css()
         selected_page = render_sidebar()
-        render_header()
-        render_kpi_cards(demo_data, STATION_METADATA)
+
+        # ── Single global top-bar call ───────────────────────────────────────
+        # This is the ONLY place render_topbar is called.
+        # render_header() and render_kpi_cards() are intentionally NOT imported
+        # or called here — topbar.py handles both.
+        render_topbar(
+            demo_data,
+            STATION_METADATA,
+            show_kpis=(selected_page not in _NO_KPI_PAGES),
+        )
     except Exception as exc:
         import traceback as _tb
         # Use raw markdown so the error is visible even if the CSS theme is
@@ -117,11 +133,11 @@ def main():
         return
 
     routes = {
-        "dashboard": lambda: render_network_map(demo_data, STATION_METADATA),
-        "network": lambda: render_network_map(demo_data, STATION_METADATA),
-        "telemetry": lambda: render_live_telemetry(df_sample),
+        "dashboard":    lambda: render_network_map(demo_data, STATION_METADATA),
+        "network":      lambda: render_network_map(demo_data, STATION_METADATA),
+        "telemetry":    lambda: render_live_telemetry(),
         "ai_diagnostics": lambda: render_xai_alerts(demo_data),
-        "health": lambda: render_station_health(demo_data, STATION_METADATA),
+        "health":       lambda: render_station_health(demo_data, STATION_METADATA),
         "sandbox":      lambda: render_sandbox(STATION_METADATA),
         "simulation":   lambda: render_simulation(),
         "live_data":    lambda: render_live_data(),
@@ -129,7 +145,6 @@ def main():
         "reports":      lambda: st.info("Reports module coming soon."),
     }
 
-    st.markdown("---")
     page_renderer = routes.get(selected_page)
     if page_renderer is None:
         st.warning("The selected page is unavailable. Returning to the dashboard.")
@@ -139,8 +154,6 @@ def main():
         page_renderer()
     except Exception as exc:
         # A failing page MUST NOT clear the shell or prevent navigation.
-        # Use both st.error (native Streamlit alert) AND an inline HTML banner
-        # so the error is visible regardless of CSS overrides.
         st.markdown(
             f"""
             <div style="

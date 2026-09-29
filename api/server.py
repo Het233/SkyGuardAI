@@ -52,11 +52,23 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# ---------------------------------------------------------------------------
+# CORS — reads ALLOWED_ORIGINS env var (comma-separated list of frontend
+# origins).  Defaults to localhost variants for local dev.  Set this env var
+# in the Render dashboard to your Streamlit Cloud app URL.
+# Example: ALLOWED_ORIGINS=https://your-app.streamlit.app
+# ---------------------------------------------------------------------------
+_raw_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:8501,http://127.0.0.1:8501,https://localhost:8501",
+)
+_ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -64,7 +76,14 @@ app.add_middleware(
 class ModelManager:
     """Singleton-style manager keeping models and station sliding buffers in memory."""
 
-    def __init__(self, models_dir: str = "artifacts/models"):
+    def __init__(self, models_dir: str | None = None):
+        # Resolve models_dir relative to this file so it works regardless of CWD
+        # (important on Render where the working directory may differ from the
+        # project root).
+        if models_dir is None:
+            _api_dir = os.path.dirname(os.path.abspath(__file__))
+            _project_root = os.path.dirname(_api_dir)
+            models_dir = os.path.join(_project_root, "artifacts", "models")
         self.models_dir = models_dir
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.models_loaded = False
@@ -397,3 +416,14 @@ def get_active_alerts(limit: int = Query(50, ge=1, le=200)):
         "active_alert_count": len(alerts),
         "alerts": alerts[-limit:],
     }
+
+
+# ---------------------------------------------------------------------------
+# Render / Uvicorn entrypoint
+# Run locally:  python -m uvicorn api.server:app --reload --host 0.0.0.0 --port 8000
+# Run on Render: start command reads $PORT automatically via this block.
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("api.server:app", host="0.0.0.0", port=port, reload=False)

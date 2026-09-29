@@ -72,3 +72,10 @@ download_checkpoint.txt
 # Backups & upload zips
 artifacts/models_toy_backup/
 SkyGuardAI.zip
+
+# Streamlit secrets — NEVER commit
+.streamlit/secrets.toml
+
+# Large data files (too big for git / Streamlit Cloud)
+aws_weather_data_all_india_2023_present.csv
+*.zip

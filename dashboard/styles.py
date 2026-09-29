@@ -87,24 +87,44 @@ html, body, [class*="css"]{
     mask-image: radial-gradient(ellipse 80% 70% at 50% 20%, black 0%, transparent 75%);
 }
 
-/* Streamlit 1.51 main content container — covers both old and new class names */
+/* Streamlit 1.51 main content container — covers both old and new class names.
+   NOTE: Do NOT set padding-top here. Streamlit's stHeader is a fixed-position
+   toolbar (~60px tall). Streamlit adds ~5rem padding-top to block-container by
+   default to compensate. Overriding it to 0.75rem caused our custom header to
+   slide behind Streamlit's native toolbar, appearing clipped. */
 section.main > div.block-container,
 section[data-testid="stMain"] > div.block-container,
 section[data-testid="stMain"] > div.stMainBlockContainer,
 div[data-testid="stMainBlockContainer"]{
-    padding-top: 1.1rem;
+    padding-top: 1rem;
     padding-bottom: 3rem;
-    max-width: 1440px;
+    max-width: 1600px;
     position: relative;
     z-index: 1;
 }
 
-#MainMenu, footer, header[data-testid="stHeader"]{
-    background: transparent;
+/* Streamlit's stHeader contains the sidebar toggle button — we MUST NOT
+   set display:none on the whole header or the toggle disappears and users
+   can't reopen the sidebar. Instead, make the header invisible/transparent
+   so it doesn't compete with our custom SkyGuard topbar, while keeping
+   the toggle interactive. */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: visible !important;
 }
-header[data-testid="stHeader"]{
-    background: linear-gradient(180deg, rgba(3,5,10,0.85) 0%, transparent 100%);
-    backdrop-filter: blur(6px);
+
+/* Hide only the deploy / share / main-menu / footer clutter — not the toggle */
+header[data-testid="stHeader"] > div:not([data-testid="stSidebarNav"]) > *:not([data-testid="stSidebarCollapsedControl"]),
+button[data-testid="stBaseButton-headerNoPadding"],
+[data-testid="stMainMenu"],
+[data-testid="stDecoration"],
+#MainMenu,
+footer {
+    display: none !important;
+    visibility: hidden !important;
 }
 
 /* ============================================================================
@@ -265,9 +285,10 @@ div[data-testid="stAlert"][data-baseweb="notification"][kind="warning"]{
 section[data-testid="stSidebar"]{
     background: linear-gradient(180deg, rgba(4,7,14,0.96) 0%, rgba(6,10,20,0.98) 100%);
     border-right: 1px solid var(--sg-panel-border);
+    min-width: 260px;
 }
 section[data-testid="stSidebar"] > div{
-    padding-top: 0.6rem;
+    padding-top: 0.75rem;
 }
 
 /* ============================================================================
@@ -420,72 +441,76 @@ section[data-testid="stSidebar"] > div{
 .sg-sidebar-brand{
     display:flex; flex-direction:column; align-items:center;
     text-align:center;
-    padding: 0.6rem 0.4rem 1.0rem 0.4rem;
-    margin-bottom: 0.4rem;
+    padding: 0.85rem 0.5rem 1.2rem 0.5rem;
+    margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--sg-panel-border);
 }
 .sg-sidebar-logo{
-    width: 46px; height: 46px;
+    width: 54px; height: 54px;
     border-radius: 50%;
     display:flex; align-items:center; justify-content:center;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
     background: radial-gradient(circle at 35% 30%, rgba(34,232,255,0.25), rgba(6,10,20,0.6));
     border: 1.5px solid var(--sg-cyan);
     box-shadow: var(--sg-glow);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
 }
 .sg-sidebar-name{
     font-family: 'Orbitron', sans-serif;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 1.12rem;
     color: var(--sg-text);
     letter-spacing: 0.03em;
 }
 .sg-sidebar-tag{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.62rem;
+    font-size: 0.76rem;
     color: var(--sg-text-faint);
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 .sg-nav-caption{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--sg-text-faint);
-    margin: 0.9rem 0.2rem 0.4rem 0.2rem;
+    margin: 1.0rem 0.2rem 0.5rem 0.2rem;
 }
 
 /* Radio-based nav re-skin into a vertical button list */
 section[data-testid="stSidebar"] div[role="radiogroup"]{
-    gap: 4px;
+    gap: 7px;
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label{
-    background: rgba(255,255,255,0.015);
-    border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 8px 12px 8px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 11px;
+    padding: 11px 14px 11px 12px;
     margin: 0;
     transition: all 0.18s ease;
     cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover{
-    background: rgba(34,232,255,0.07);
+    background: rgba(34,232,255,0.08);
     border-color: var(--sg-panel-border);
+    box-shadow: inset 2px 0 0 rgba(34,232,255,0.45);
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"],
 section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked){
-    background: linear-gradient(90deg, rgba(34,232,255,0.16), rgba(34,232,255,0.02));
+    background: linear-gradient(90deg, rgba(34,232,255,0.18), rgba(34,232,255,0.03));
     border-color: var(--sg-panel-border-strong);
-    box-shadow: inset 2px 0 0 var(--sg-cyan), 0 0 14px rgba(34,232,255,0.12);
+    box-shadow: inset 3px 0 0 var(--sg-cyan), 0 0 16px rgba(34,232,255,0.14);
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] label p{
     color: var(--sg-text) !important;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     letter-spacing: 0.02em;
 }
 section[data-testid="stSidebar"] div[role="radiogroup"] input{
@@ -493,17 +518,17 @@ section[data-testid="stSidebar"] div[role="radiogroup"] input{
 }
 
 .sg-sidebar-footer{
-    margin-top: 1.2rem;
-    padding-top: 0.8rem;
+    margin-top: 1.4rem;
+    padding-top: 0.9rem;
     border-top: 1px solid var(--sg-panel-border);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.64rem;
+    font-size: 0.74rem;
     color: var(--sg-text-faint);
     letter-spacing: 0.05em;
-    line-height: 1.6;
+    line-height: 1.7;
 }
 .sg-sidebar-footer .sg-dot-ok{
-    display:inline-block; width:6px; height:6px; border-radius:50%;
+    display:inline-block; width:7px; height:7px; border-radius:50%;
     background: var(--sg-green);
     box-shadow: 0 0 6px var(--sg-green);
     margin-right: 6px;

@@ -10,9 +10,22 @@ Requires `inject_css()` (from dashboard.styles) to have been called earlier
 in the script so the `.sg-sidebar-*` / nav radio classes resolve.
 """
 
+import os
+import sys
 from typing import Tuple
 
 import streamlit as st
+
+# Resolve data_loader from dashboard root
+_DASHBOARD_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _DASHBOARD_DIR not in sys.path:
+    sys.path.insert(0, _DASHBOARD_DIR)
+
+try:
+    from data_loader import get_total_aws_stations as _get_aws_count
+except ImportError:
+    def _get_aws_count():
+        return 826
 
 # Ordered nav definition: (page key, display label, icon)
 NAV_ITEMS: Tuple[Tuple[str, str, str], ...] = (
@@ -82,15 +95,19 @@ def render_sidebar() -> str:
         selected_key = keys[selected_index]
         st.session_state[_SESSION_KEY] = selected_key
 
+        try:
+            aws_count = _get_aws_count()
+        except Exception:
+            aws_count = 826
         st.markdown(
-            """
+            f"""
             <div class="sg-sidebar-footer">
                 <div><span class="sg-dot-ok"></span>ALL SYSTEMS NOMINAL</div>
-                <div>10/10 AWS STATIONS ONLINE</div>
+                <div>{aws_count} AWS STATIONS IN NETWORK</div>
                 <div>SkyGuard&nbsp;AI&nbsp;v2.4&nbsp;·&nbsp;IMD&nbsp;GOI</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    return selected_key
+    return selected_key
