@@ -46,6 +46,36 @@ from health.health_score import SensorHealthTracker, HealthStatus
 from imputation.correction import MeteorologicalImputer
 
 
+# ---------------------------------------------------------------------------
+# JSON serialisation safety
+# ---------------------------------------------------------------------------
+def _to_json_safe(value):
+    """Recursively convert NumPy scalar types to native Python equivalents.
+
+    FastAPI / Pydantic v2 (especially under Python 3.12+) raises
+    PydanticSerializationError when it encounters np.bool_, np.int64,
+    np.float64, etc. inside Dict[str, Any] fields (like diagnostic_card)
+    because it cannot determine the correct JSON encoder for them.
+
+    Calling this on any dict/list that will be placed inside the response
+    schema guarantees all values are standard Python types before Pydantic
+    ever touches them.
+
+    Examples:
+        np.bool_   -> bool
+        np.int64   -> int
+        np.float64 -> float
+        np.str_    -> str
+    """
+    if isinstance(value, np.generic):          # any numpy scalar
+        return value.item()                     # -> native Python type
+    if isinstance(value, dict):
+        return {k: _to_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_json_safe(v) for v in value]
+    return value
+
+
 app = FastAPI(
     title="SkyGuard AI — Operational Surveillance API",
     description="Real-Time Meteorological Sensor Quality Control, Anomaly Detection & Self-Healing Service",
@@ -257,6 +287,9 @@ def ingest_single_observation(obs: SensorObservationInput):
     severity = str(sev_arr[0])
     agreement = float(conf_arr[0])
 
+    # Explicitly cast to Python bool — bin_pred[0] from fuse_scores() returns
+    # np.int64 (0/1). The expression `np.int64(1) or True` stays np.int64,
+    # which Pydantic v2 / Python 3.12+ refuses to serialize as JSON bool.
     is_anom = bool(bin_pred[0]) or (composite_score >= 0.42)
 
     # 6. Root Cause Attribution
@@ -327,15 +360,18 @@ def ingest_single_observation(obs: SensorObservationInput):
         is_anomaly=is_anom,
         composite_score=round(composite_score, 4),
         severity=severity,
-        predicted_cause=pred_cause,
+        predicted_cause=str(pred_cause),
         cause_confidence=round(cause_conf, 4),
-        primary_culprit=primary_culprit,
+        primary_culprit=str(primary_culprit),
         imputed_temperature_c=round(imp_t, 2),
         imputed_air_pressure_mbar=round(imp_p, 2),
         imputed_relative_humidity_pct=round(imp_rh, 2),
         imputation_flag=imp_flag,
         imputation_confidence=round(imp_conf, 3),
-        diagnostic_card=card_dict,
+        # _to_json_safe() converts every np.float64 / np.bool_ / np.int64
+        # found inside nested dicts (e.g. evidence_breakdown.thermodynamic_state)
+        # to native Python types before Pydantic serializes the response.
+        diagnostic_card=_to_json_safe(card_dict),
     )
 
 
